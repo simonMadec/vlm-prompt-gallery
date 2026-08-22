@@ -65,22 +65,23 @@ function uniqCoarse(vals) {
   return [...order.filter((k) => set.has(k)), ...[...set].filter((k) => !order.includes(k)).sort()];
 }
 
-function gtTag(d) {
+function gtCell(d) {
   const fine = gtEn(d);
   const coarse = gtCoarse(d);
   const raw = d.ground_truth || d.ground_truth_display || "";
-  const src = d.ground_truth_source && d.ground_truth_source !== "final"
-    ? ` <span class="gt-fr">${esc(d.ground_truth_source)}</span>`
-    : "";
-  const cls = d.ground_truth ? "tag-gt" : "tag-nogt";
-  const coarseTag = coarse
-    ? `<span class="tag tag-coarse">GT coarse: ${esc(coarse)}</span>`
-    : `<span class="tag tag-nogt">GT coarse: —</span>`;
-  const fineText = fine || raw || "—";
   const fr = raw && fine && raw !== fine
     ? ` <span class="gt-fr">(${esc(raw)})</span>`
     : "";
-  return `${coarseTag}<span class="tag ${cls}">GT fine: ${esc(fineText)}${fr}${src}</span>`;
+  const src = d.ground_truth_source && d.ground_truth_source !== "final"
+    ? ` <span class="gt-fr">${esc(d.ground_truth_source)}</span>`
+    : "";
+  return `<div class="pred gt-cell">
+    <div class="pred-key">ground truth</div>
+    <div class="pred-row">
+      <div><span class="pred-k">coarse</span> <span class="pred-coarse">${esc(coarse || "—")}</span></div>
+      <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine || raw || "—")}${fr}${src}</div>
+    </div>
+  </div>`;
 }
 
 function liveRender() {
@@ -342,10 +343,6 @@ function render() {
   }
 
   grid.replaceChildren();
-  const colStyle =
-    prompts.length > 0
-      ? `grid-template-columns: repeat(${prompts.length}, minmax(0, 1fr))`
-      : "";
 
   for (const d of shown) {
     const agree = labelsAgree(d, prompts);
@@ -359,12 +356,14 @@ function render() {
       ? `<span class="tag tag-depth">depth</span>`
       : "";
     const texts = TEXTS[d.id] || {};
-    const cells = prompts.map((k) => predCell(d, k, texts)).join("");
+    const cells = [gtCell(d), ...prompts.map((k) => predCell(d, k, texts))].join("");
+    const nCols = prompts.length + 1;
+    const colStyle = `grid-template-columns: repeat(${nCols}, minmax(0, 1fr))`;
     card.innerHTML = `
       ${buildVisualBlock(d)}
       <div class="meta">
-        <div class="meta-top">${gtTag(d)}${flag}${depthBadge}</div>
-        <div class="preds" style="${colStyle}">${cells || "<span style='color:#8b949e'>No prompt selected</span>"}</div>
+        <div class="meta-top">${flag}${depthBadge}</div>
+        <div class="preds" style="${colStyle}">${cells}</div>
         <div class="fname">${esc(d.id)}</div>
       </div>`;
     card.addEventListener("click", (e) => {
@@ -401,11 +400,9 @@ function openLightbox(id) {
   const flag = agree
     ? `<span class="tag tag-agree">agree</span>`
     : `<span class="tag tag-disagree">disagree</span>`;
-  const colStyle =
-    prompts.length > 0
-      ? `grid-template-columns: repeat(${prompts.length}, minmax(0, 1fr))`
-      : "";
-  const cells = prompts.map((key) => {
+  const nCols = prompts.length + 1;
+  const colStyle = `grid-template-columns: repeat(${nCols}, minmax(0, 1fr))`;
+  const predCells = prompts.map((key) => {
     const run = runOf(d, key);
     const t = texts[key] || {};
     if (!run) {
@@ -427,8 +424,8 @@ function openLightbox(id) {
   }).join("");
 
   document.getElementById("lb-meta").innerHTML = `
-    <div>${gtTag(d)} ${flag}</div>
-    <div class="lb-preds" style="${colStyle}">${cells}</div>
+    <div>${flag}</div>
+    <div class="lb-preds" style="${colStyle}">${gtCell(d)}${predCells}</div>
     <div class="fname">${esc(d.id)}</div>`;
   document.getElementById("lightbox").classList.add("open");
 }
