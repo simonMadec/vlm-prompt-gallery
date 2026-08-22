@@ -47,13 +47,11 @@ function accuracyForPrompts(keys) {
 function fillPromptSelect() {
   const el = document.getElementById("f-prompts");
   if (!el) return;
-  const catalog = PAYLOAD.prompt_catalog || {};
   el.replaceChildren();
   for (const k of PAYLOAD.prompts) {
     const opt = document.createElement("option");
     opt.value = k;
-    const title = catalog[k]?.title_en;
-    opt.textContent = title ? `${k} — ${title}` : k;
+    opt.textContent = k;
     opt.selected = true;
     el.appendChild(opt);
   }
