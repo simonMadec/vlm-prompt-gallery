@@ -13,28 +13,42 @@
     #stats { margin-top: 0.5rem; font-weight: 600; color: #58a6ff; }
     #load-error { display: none; margin: 1rem 1.5rem; padding: 1rem; background: #3d1f1f;
       border: 1px solid #da3633; border-radius: 8px; color: #ffa198; line-height: 1.5; }
-    .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;
+    .filters { display: flex; flex-direction: column; gap: 0.85rem;
                  padding: 1rem 1.5rem; background: #161b22; border-bottom: 1px solid #30363d; }
+    .filter-top { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; align-items: center; }
+    .filters .check-row { display: flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; color: #e6edf3; padding: 0; }
+    .filters .check-row label { margin: 0; color: #e6edf3; font-size: 0.85rem; cursor: pointer; }
     .filters label { display: block; font-size: 0.75rem; color: #8b949e; margin-bottom: 0.25rem; }
-    .filters select, .filters input[type="text"] { width: 100%; padding: 0.4rem; border-radius: 6px;
+    .filters select, .filters input[type="text"] { padding: 0.4rem; border-radius: 6px;
       border: 1px solid #30363d; background: #0d1117; color: #e6edf3; font-size: 0.85rem; }
-    .filters select[multiple] { min-height: 88px; }
-    .check-row { display: flex; align-items: center; gap: 0.45rem; padding-top: 1.15rem; font-size: 0.85rem; color: #e6edf3; }
     .check-row input { accent-color: #58a6ff; }
-    .filter-actions { grid-column: 1 / -1; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .filter-group { }
+    .group-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.75rem; color: #8b949e; }
+    .group-head .hint { color: #484f58; font-weight: 400; }
+    .chip-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.28rem 0.65rem;
+      border-radius: 999px; border: 1px solid #30363d; background: #0d1117; color: #8b949e;
+      font-size: 0.78rem; cursor: pointer; user-select: none; }
+    .chip:hover { border-color: #58a6ff; color: #e6edf3; }
+    .chip:has(input:checked) { background: #1f3a5f; border-color: #58a6ff; color: #e6edf3; }
+    .chip input { accent-color: #58a6ff; margin: 0; }
+    .btn-mini { background: none; border: none; color: #58a6ff; cursor: pointer; font-size: 0.75rem; padding: 0; }
+    .btn-mini:hover { text-decoration: underline; }
     .btn { background: #21262d; color: #58a6ff; border: 1px solid #30363d; padding: 0.45rem 0.9rem;
       border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
     .btn:hover { background: #30363d; }
     .btn-primary { background: #238636; color: #fff; border-color: #238636; }
     #load-more { display: none; margin: 1rem auto; }
     #grid { display: flex; flex-direction: column; gap: 1rem; padding: 1.5rem; max-width: 2400px; margin: 0 auto; }
-    .card { display: grid; grid-template-columns: minmax(240px, 340px) 1fr; gap: 0;
+    .card { display: grid; grid-template-columns: minmax(240px, 420px) 1fr; gap: 0;
       background: #161b22; border-radius: 10px; overflow: hidden;
       border: 2px solid #30363d; cursor: zoom-in; }
     .card.agree { border-color: #238636; }
     .card.disagree { border-color: #d29922; }
     .card:hover { border-color: #58a6ff; }
-    .card img { width: 100%; height: 100%; min-height: 200px; max-height: 280px; object-fit: contain; background: #000; }
+    .visual { background: #000; min-height: 200px; display: flex; }
+    .visual.split { display: grid; grid-template-columns: 1fr 1fr; }
+    .visual img { width: 100%; height: 100%; min-height: 200px; max-height: 280px; object-fit: contain; background: #000; }
     .meta { padding: 0.75rem 0.9rem; font-size: 0.82rem; line-height: 1.45; min-width: 0; }
     .meta-top { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-bottom: 0.55rem; }
     .preds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem; }
@@ -44,24 +58,30 @@
     .pred.missing { opacity: 0.55; }
     .pred-key { font-size: 0.7rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.25rem; }
     .pred-label { font-weight: 600; }
-    .reason-preview { color: #8b949e; margin-top: 0.35rem; font-size: 0.75rem;
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .gt-fr { color: #8b949e; font-weight: 400; font-size: 0.72rem; }
+    details.explain { margin-top: 0.4rem; color: #8b949e; font-size: 0.75rem; }
+    details.explain summary { cursor: pointer; color: #58a6ff; font-size: 0.75rem; list-style: none; }
+    details.explain summary::-webkit-details-marker { display: none; }
+    details.explain summary::before { content: "▸ "; }
+    details.explain[open] summary::before { content: "▾ "; }
+    details.explain .reason { margin-top: 0.35rem; white-space: pre-wrap; max-height: 160px; overflow-y: auto; }
     .tag { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.72rem;
       font-weight: 600; margin-right: 0.2rem; }
     .tag-gt { background: #00ff88; color: #0d1117; }
     .tag-agree { background: #238636; color: #fff; }
     .tag-disagree { background: #9e6a03; color: #fff; }
+    .tag-depth { background: #8957e5; color: #fff; }
     .score { color: #f5a623; font-weight: 700; }
     .fname { color: #8b949e; font-size: 0.7rem; margin-top: 0.45rem; }
     #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.94); z-index: 100;
       flex-direction: column; align-items: center; justify-content: center; padding: 1.5rem; overflow: auto; }
     #lightbox.open { display: flex; }
-    #lightbox img { max-width: 96vw; max-height: 52vh; object-fit: contain; border: 3px solid #58a6ff; border-radius: 8px; }
+    #lb-visual { width: 100%; max-width: 1100px; }
+    #lb-visual .visual img { max-width: 100%; max-height: 52vh; object-fit: contain; border: 3px solid #58a6ff; border-radius: 8px; }
     #lightbox .close { position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; color: #fff;
       cursor: pointer; background: none; border: none; }
     #lb-meta { margin-top: 1rem; max-width: 1100px; width: 100%; text-align: left; font-size: 0.9rem; }
     .lb-preds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-top: 0.75rem; }
-    .reason { color: #8b949e; margin-top: 0.5rem; line-height: 1.5; max-height: 180px; overflow-y: auto; white-space: pre-wrap; }
     .header-nav { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
     .header-nav a { color: #58a6ff; font-size: 0.9rem; }
     #prompt-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
@@ -92,7 +112,7 @@
     <div class="header-nav">
       <a href="prompts.html">Voir les prompts (texte complet)</a>
       <span style="color:#8b949e">·</span>
-      <span style="color:#8b949e;font-size:0.85rem">Clic sur un nom de prompt ci-dessous pour l’aperçu</span>
+      <span style="color:#8b949e;font-size:0.85rem">Click a prompt name to view its text</span>
     </div>
     <div id="prompt-chips"></div>
     <div id="stats">Chargement…</div>
@@ -100,36 +120,57 @@
   <div id="load-error"></div>
 
   <div class="filters">
-    <div class="check-row">
-      <input type="checkbox" id="f-disagree" checked>
-      <label for="f-disagree" style="margin:0">Désaccords seulement</label>
+    <div class="filter-top">
+      <div class="check-row">
+        <input type="checkbox" id="f-disagree">
+        <label for="f-disagree">Désaccords seulement</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="f-depth">
+        <label for="f-depth">Afficher depth</label>
+      </div>
+      <div><label for="f-vs-gt">Vs ground truth</label>
+        <select id="f-vs-gt">
+          <option value="all">All</option>
+          <option value="any-correct">At least one correct</option>
+          <option value="any-wrong">At least one incorrect</option>
+          <option value="all-correct">All correct</option>
+          <option value="all-wrong">All incorrect</option>
+        </select></div>
+      <div><label for="f-sort">Sort</label>
+        <select id="f-sort">
+          <option value="name">File name</option>
+          <option value="disagree">Disagreements first</option>
+          <option value="gt">Ground truth</option>
+          <option value="conf-gap">Confidence gap ↓</option>
+        </select></div>
+      <div><label for="f-search">Search</label><input type="text" id="f-search" placeholder="image id…"></div>
     </div>
-    <div><label for="f-prompts">Prompts affichés (multi)</label>
-      <select id="f-prompts" multiple title="Ctrl+clic pour multi-sélection"></select></div>
-    <div><label for="f-gt">Vérité terrain (multi)</label><select id="f-gt" multiple></select></div>
-    <div><label for="f-pred">Prédiction (multi)</label><select id="f-pred" multiple></select></div>
-    <div><label for="f-vs-gt">Vs vérité terrain</label>
-      <select id="f-vs-gt">
-        <option value="all">Tous</option>
-        <option value="any-correct">Au moins un correct</option>
-        <option value="any-wrong">Au moins un incorrect</option>
-        <option value="all-correct">Tous corrects</option>
-        <option value="all-wrong">Tous incorrects</option>
-      </select></div>
-    <div><label for="f-sort">Tri</label>
-      <select id="f-sort">
-        <option value="disagree">Désaccords d'abord</option>
-        <option value="name">Nom fichier</option>
-        <option value="gt">Vérité terrain</option>
-        <option value="conf-gap">Écart de confiance ↓</option>
-      </select></div>
-    <div><label for="f-search">Recherche nom</label><input type="text" id="f-search" placeholder="id image…"></div>
-    <div class="filter-actions">
-      <button class="btn" id="btn-prompts-all" type="button">Tous les prompts</button>
-      <button class="btn" id="btn-prompts-none" type="button">Aucun prompt</button>
-      <button class="btn btn-primary" id="btn-apply">Appliquer filtres</button>
-      <button class="btn" id="btn-reset">Réinitialiser</button>
-      <label style="font-size:0.85rem;color:#8b949e"><input type="checkbox" id="f-live" checked> Filtre en direct</label>
+    <div class="filter-group">
+      <div class="group-head">
+        <span>Prompts</span>
+        <button type="button" class="btn-mini" id="btn-prompts-all">all</button>
+        <button type="button" class="btn-mini" id="btn-prompts-none">none</button>
+      </div>
+      <div id="chips-prompts" class="chip-list"></div>
+    </div>
+    <div class="filter-group">
+      <div class="group-head">
+        <span>Ground truth</span>
+        <span class="hint">none checked = all</span>
+        <button type="button" class="btn-mini" id="btn-gt-all">all</button>
+        <button type="button" class="btn-mini" id="btn-gt-none">none</button>
+      </div>
+      <div id="chips-gt" class="chip-list"></div>
+    </div>
+    <div class="filter-group">
+      <div class="group-head">
+        <span>Prediction</span>
+        <span class="hint">none checked = all</span>
+        <button type="button" class="btn-mini" id="btn-pred-all">all</button>
+        <button type="button" class="btn-mini" id="btn-pred-none">none</button>
+      </div>
+      <div id="chips-pred" class="chip-list"></div>
     </div>
   </div>
 
@@ -138,7 +179,7 @@
 
   <div id="lightbox">
     <button class="close">×</button>
-    <img id="lb-img" src="" alt="">
+    <div id="lb-visual"></div>
     <div id="lb-meta"></div>
   </div>
   <div id="prompt-modal">
