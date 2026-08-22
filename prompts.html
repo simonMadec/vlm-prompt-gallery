@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prompts — comparaison VLM</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0d1117; color: #e6edf3;
+      line-height: 1.5; padding: 1.5rem; max-width: 960px; margin: 0 auto; }
+    header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #58a6ff; }
+    h1 { font-size: 1.35rem; margin-bottom: 0.5rem; }
+    .nav { margin-top: 0.75rem; }
+    a { color: #58a6ff; }
+    .toc { list-style: none; margin: 1rem 0; padding: 0; }
+    .toc li { margin: 0.35rem 0; }
+    .toc code { color: #79c0ff; }
+    .prompt-block { margin-bottom: 2rem; background: #161b22; border: 1px solid #30363d;
+      border-radius: 10px; padding: 1rem 1.25rem; }
+    .prompt-block h2 { font-size: 1.05rem; margin-bottom: 0.35rem; }
+    .meta { color: #8b949e; font-size: 0.85rem; margin-bottom: 0.75rem; }
+    pre { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 1rem;
+      white-space: pre-wrap; word-break: break-word; font-size: 0.82rem; line-height: 1.45;
+      max-height: 70vh; overflow: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Texte des prompts</h1>
+    <p style="color:#8b949e">Texte exact envoyé au modèle pour chaque variante.</p>
+    <p class="nav"><a href="gallery.html">← Retour à la galerie</a></p>
+    <ul class="toc">
+      <li><a href="#hierarchical"><code>hierarchical</code></a> — Hierarchical</li><li><a href="#hierarchical_en_no_comment"><code>hierarchical_en_no_comment</code></a> — Hierarchical (no comment)</li><li><a href="#gt_aligned"><code>gt_aligned</code></a> — GT aligned</li>
+    </ul>
+  </header>
+  <section class="prompt-block" id="hierarchical">
+  <h2><code>hierarchical</code> — Hierarchical</h2>
+  <p class="meta">6142 caractères · source: landcover_prompts.py</p>
+  <pre>You are classifying ground-level street-view photos from rural Benin (Parakou landscapes).
+
+The photo is taken from a road. IGNORE the road strip at the bottom unless the entire image is road or bare soil.
+
+Classify LAND USE of the main plot, not the tallest object.
+
+Scattered trees are normal in this landscape. Trees in FRONT of the plot, trees BEHIND the plot, and roadside trees must not steal the label from an identifiable annual crop.
+
+These labels will train satellite land-cover models. If you cannot see the plot, or two land uses are co-dominant, return Unclassifiable. Do not guess. Unclassifiable is not a land-cover class and must not be used as satellite ground truth.
+
+## Step A — coarse class (mandatory)
+Exactly one of:
+- built_up
+- bare_road
+- water
+- annual_crop
+- tree_crop
+- natural_vegetation
+- unclassifiable
+
+## Step B — fine class (mandatory)
+class_name_en MUST be copied EXACTLY from the list under the coarse class you chose. Never invent a name. Never use &quot;Wooded fallow&quot;, &quot;Tree savanna&quot;, &quot;Shrubby fallow&quot;, &quot;Other Crop&quot;, &quot;Other Orchard&quot;, &quot;Other Class&quot;, or &quot;Agroforestry&quot;.
+
+### built_up
+- Built-up — houses, shops, walls, paved compounds, village fabric.
+
+### bare_road
+- Bare road — dirt/laterite road or bare earth dominates the frame.
+
+### water
+- Water — open water is the subject.
+
+### annual_crop  (use this if a cultivated herbaceous/root field is identifiable on the ground)
+- Maize — tall broad-leaf cereal, often in rows; cobs or tassels if mature; looks like large grass, not a grain-head panicle.
+- Sorghum/Millet — tall cereal with a compact or broom-like GRAIN HEAD / panicle at the tip; narrower leaves than maize.
+- Soybean — low-to-medium dense uniform field of bushy legumes, trifoliate leaves, no mounds, no panicles, no maize stalks. Often looks like a continuous green carpet ~0.4–1 m. If it is clearly a managed herbaceous field but you cannot tell soybean vs mixed legumes, use Other annual herbaceous crop instead of natural vegetation.
+- Yam — regular soil MOUNDS / ridges (buttes), often vines or stakes.
+- Cassava — woody shrubs 1–3 m, palmate (hand-shaped) leaves, often irregular spacing in a field.
+- Rice — very dense grass in a wet/lowland plot; standing water or bunds.
+- Cotton — bushy shrubs; white bolls only if mature.
+- Cowpea — climbing/spreading legume, often intercropped; use only if clearly cowpea.
+- Groundnut — very low groundnut carpet; rare in this set — prefer Other annual herbaceous crop unless sure.
+- Other annual herbaceous crop — cultivated herbaceous field that is not clearly maize/sorghum/soybean/yam/cassava/rice.
+
+### tree_crop  (planted trees ARE the land use: monospecific orchard/plantation)
+- Cashew — medium trees, rounded crown, compound leaves, often yellowish; look for cashew apples/nuts; spacing often regular but young plots can look scrubby. Do not require fruit.
+- Mango — large dark evergreen dome, much bigger than cashew.
+- Teak — tall straight trunks, very large broad opposite leaves, often in rows; dry-season yellowish large leaves.
+- Gmelina arborea — gmelina plantation (similar to teak but typically smaller/less columnar). Rare; prefer Teak if unsure between the two plantations.
+- Other orchard — other planted orchard (citrus, oil palm, mixed fruit) that is not cashew/mango/teak.
+
+### natural_vegetation  (no identifiable annual crop, and not a planted orchard)
+- Forest — closed or nearly closed tree canopy; forest interior or dense woodland; little ground visible.
+- Herbaceous savanna — grass-dominated, few or no trees/shrubs, not a crop.
+- Shrubby vegetation — shrubland, open woodland, tree savanna, or parkland with scattered trees over grass/weeds. NOT a planted orchard and NOT closed forest. There is no Agroforestry class: parkland without an identifiable annual crop is Shrubby vegetation.
+
+### unclassifiable
+- Unclassifiable — do not assign a land-use class. Set usable_for_satellite_gt to false and pick exactly one reject_reason:
+  - unusable_image — blur, darkness, glare, only sky/road, vehicle, people filling the frame
+  - ground_not_visible — trees/vegetation in front hide the plot; you cannot see the ground layer
+  - mixed_plots — two land uses are co-dominant (field boundary, mosaic); no single plot dominates
+  - unknown_land_use — image is usable but you cannot tell the land use
+
+## Decision rules (in order)
+0. If the photo is unusable, the ground of the plot is not visible, or two land uses are co-dominant → unclassifiable. Do not pick a compromise class.
+1. If buildings dominate → Built-up. If the photo is mostly road/bare laterite → Bare road.
+2. If an annual crop is identifiable on the ground (rows, mounds, uniform legumes, cereal heads, cassava shrubs, rice, etc.) → annual_crop. This holds even if trees stand in FRONT of the crop, BEHIND it, or along the road. Do not switch to natural_vegetation, tree_crop, or Unclassifiable because trees are visible if the crop on the ground is still identifiable.
+3. If trees are planted as the land use (same species, regular spacing, plantation/orchard form) → tree_crop, even if the understory is weedy or grassy.
+4. Closed canopy, no field → Forest. Open grass, almost no woody plants → Herbaceous savanna. Mixed shrubs/trees, parkland, or uncultivated open woodland → Shrubby vegetation.
+5. NEVER use natural_vegetation as the default because &quot;there are trees&quot;. Scattered trees + a visible annual crop is still annual_crop. Trees in front that fully hide the ground → Unclassifiable (ground_not_visible), not Shrubby vegetation.
+6. Confidence: ≥0.85 only with organ-level cues (panicles, cobs, mounds, cashew apples, teak leaves, palmate cassava). Species guess without those cues: 0.4–0.7. Coarse class can be more confident than the fine class. usable_for_satellite_gt is true only for a real land-use class (not Unclassifiable).
+
+JSON only (no markdown):
+{&quot;level1&quot;:&quot;&lt;coarse&gt;&quot;,&quot;level1_confidence&quot;:&lt;0-1&gt;,&quot;class_name_en&quot;:&quot;&lt;exact fine label&gt;&quot;,&quot;confidence&quot;:&lt;0-1&gt;,&quot;cues&quot;:[&quot;&lt;cue&gt;&quot;],&quot;reasoning&quot;:&quot;&lt;1-2 sentences&gt;&quot;,&quot;usable_for_satellite_gt&quot;:&lt;true|false&gt;,&quot;reject_reason&quot;:null|&quot;unusable_image&quot;|&quot;ground_not_visible&quot;|&quot;mixed_plots&quot;|&quot;unknown_land_use&quot;}
+</pre>
+</section><section class="prompt-block" id="hierarchical_en_no_comment">
+  <h2><code>hierarchical_en_no_comment</code> — Hierarchical (no comment)</h2>
+  <p class="meta">2725 caractères · source: landcover_prompts.py</p>
+  <pre>You are classifying ground-level street-view photos from rural Benin (Parakou landscapes).
+
+The photo is taken from a road. IGNORE the road strip at the bottom unless the entire image is road or bare soil.
+
+Classify LAND USE of the main plot, not the tallest object.
+
+Trees in FRONT of the plot, trees BEHIND the plot, and roadside trees must not steal the label from an identifiable annual crop.
+
+These labels will train satellite land-cover models. If you cannot see the plot, return unclassifiable. Never use Agroforestry.
+
+## Step A — coarse class (mandatory)
+Exactly one of:
+- built_up
+- bare_road
+- water
+- annual_crop
+- tree_crop
+- natural_vegetation
+- unclassifiable
+
+## Step B — fine class (mandatory)
+class_name_en MUST be copied EXACTLY from the list under the coarse class you chose. Never invent a name. Never use &quot;Wooded fallow&quot;, &quot;Tree savanna&quot;, &quot;Shrubby fallow&quot;, &quot;Other Crop&quot;, &quot;Other Orchard&quot;, &quot;Other Class&quot;, or &quot;Agroforestry&quot;.
+
+### built_up
+- Built-up
+
+### bare_road
+- Bare road
+
+### water
+- Water
+
+### annual_crop
+- Maize
+- Sorghum/Millet
+- Soybean
+- Yam
+- Cassava
+- Rice
+- Cotton
+- Cowpea
+- Groundnut
+- Other annual herbaceous crop
+
+### tree_crop
+- Cashew
+- Mango
+- Teak
+- Gmelina arborea
+- Other orchard
+
+### natural_vegetation
+- Forest
+- Herbaceous savanna
+- Shrubby vegetation
+
+### unclassifiable
+- Unclassifiable
+
+## Decision rules (in order)
+0. Unusable photo, ground of the plot not visible, or two land uses co-dominant → unclassifiable (usable_for_satellite_gt=false; reject_reason=unusable_image|ground_not_visible|mixed_plots|unknown_land_use).
+1. If buildings dominate → Built-up. If the photo is mostly road/bare laterite → Bare road.
+2. If an annual crop is identifiable on the ground → annual_crop, even if trees stand in FRONT or BEHIND.
+3. If trees are planted (spacing, same species, plantation form) → tree_crop, even if the understory is weedy or grassy.
+4. Closed canopy, no field → Forest. Open grass → Herbaceous savanna. Mixed shrubs/trees, parkland, uncultivated open woodland → Shrubby vegetation.
+5. NEVER use natural_vegetation as the default because &quot;there are trees&quot;. Trees in front that fully hide the ground → Unclassifiable, not Shrubby vegetation.
+6. Confidence: ≥0.85 only with organ-level cues (panicles, cobs, mounds, cashew apples, teak leaves, palmate cassava). Species guess without those cues: 0.4–0.7. Coarse class can be more confident than the fine class.
+
+JSON only (no markdown):
+{&quot;level1&quot;:&quot;&lt;coarse&gt;&quot;,&quot;level1_confidence&quot;:&lt;0-1&gt;,&quot;class_name_en&quot;:&quot;&lt;exact fine label&gt;&quot;,&quot;confidence&quot;:&lt;0-1&gt;,&quot;cues&quot;:[&quot;&lt;cue&gt;&quot;],&quot;reasoning&quot;:&quot;&lt;1-2 sentences&gt;&quot;,&quot;usable_for_satellite_gt&quot;:&lt;true|false&gt;,&quot;reject_reason&quot;:null|&quot;unusable_image&quot;|&quot;ground_not_visible&quot;|&quot;mixed_plots&quot;|&quot;unknown_land_use&quot;}
+</pre>
+</section><section class="prompt-block" id="gt_aligned">
+  <h2><code>gt_aligned</code> — GT aligned</h2>
+  <p class="meta">2619 caractères · source: landcover_prompts.py</p>
+  <pre>You are classifying ground-level street-view photos from rural Benin.
+
+Output class_name_en MUST be exactly one of these labels (copy spelling):
+
+Built-up, Bare road, Water,
+Maize, Sorghum/Millet, Soybean, Yam, Cassava, Rice, Cotton, Cowpea, Groundnut, Other annual herbaceous crop,
+Cashew, Mango, Teak, Gmelina arborea, Other orchard,
+Forest, Herbaceous savanna, Shrubby vegetation,
+Unclassifiable
+
+There is no Agroforestry class. Parkland without an identifiable annual crop → Shrubby vegetation.
+
+Visual guide:
+- Built-up: buildings, village, walls, metal roofs.
+- Bare road: dirt/laterite road or bare soil is the subject.
+- Water: water body.
+- Maize: tall broad-leaf cereal, rows, cobs/tassels if mature.
+- Sorghum/Millet: tall cereal with a grain panicle/head at the top (not maize).
+- Soybean: dense low bushy legume field, trifoliate leaves, no mounds, no panicles. If it is a managed green field but species is unclear → Other annual herbaceous crop, NOT savanna.
+- Yam: soil mounds/ridges, vines/stakes.
+- Cassava: 1–3 m shrubs, palmate leaves.
+- Rice: wet dense grass, paddies/lowland.
+- Cotton: bushy; bolls if mature. Rare.
+- Cowpea / Groundnut: legumes; rare — prefer Other annual herbaceous crop if unsure.
+- Other annual herbaceous crop: other or mixed annual crop.
+- Cashew: cashew orchard (spacing, compound leaves, cashew apples). Do not require fruit. Do not dump cashew into shrubland.
+- Mango: large dark mango crowns.
+- Teak: teak plantation, huge leaves, straight trunks, rows.
+- Gmelina arborea: gmelina plantation. Rare.
+- Other orchard: other orchard.
+- Forest: closed tree canopy. Dense woodland is Forest, not shrubland.
+- Herbaceous savanna: grass savanna, few trees, not a crop.
+- Shrubby vegetation: shrubs / open woodland / parkland, not orchard, not forest.
+- Unclassifiable: unusable photo, ground of the plot not visible, mixed plots, or unknown land use. Not satellite ground truth.
+
+Rules:
+1. Classify plot land use; ignore the foreground road unless the whole frame is road.
+2. If an annual crop is identifiable on the ground → that crop, even if trees stand in FRONT or BEHIND.
+3. Planted orchard beats weedy understory.
+4. Do not invent extra classes (no fallow, no tree savanna, no agroforestry, no &quot;other&quot; except Unclassifiable).
+5. If the ground is hidden or two land uses are co-dominant → Unclassifiable, not Shrubby vegetation.
+
+JSON only:
+{&quot;class_name_en&quot;:&quot;&lt;exact label&gt;&quot;,&quot;confidence&quot;:&lt;0-1&gt;,&quot;cues&quot;:[&quot;&lt;cue&gt;&quot;],&quot;reasoning&quot;:&quot;&lt;1-2 sentences&gt;&quot;,&quot;usable_for_satellite_gt&quot;:&lt;true|false&gt;,&quot;reject_reason&quot;:null|&quot;unusable_image&quot;|&quot;ground_not_visible&quot;|&quot;mixed_plots&quot;|&quot;unknown_land_use&quot;}
+</pre>
+</section>
+</body>
+</html>
