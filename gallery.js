@@ -66,8 +66,12 @@ function setChipGroup(containerId, selected) {
   });
 }
 
+function $(id) {
+  return document.getElementById(id);
+}
+
 function fillChipGroup(containerId, values, { checked = false } = {}) {
-  const el = document.getElementById(containerId);
+  const el = $(containerId);
   if (!el) return;
   el.replaceChildren();
   for (const v of values) {
@@ -178,12 +182,12 @@ function buildVisualBlock(d) {
 }
 
 function filterData() {
-  const disagreeOnly = document.getElementById("f-disagree").checked;
+  const disagreeOnly = $("f-disagree")?.checked;
   const gt = checkedValues("chips-gt");
   const pred = checkedValues("chips-pred");
-  const vsGt = document.getElementById("f-vs-gt").value;
-  const search = document.getElementById("f-search").value.trim().toLowerCase();
-  const sort = document.getElementById("f-sort").value;
+  const vsGt = $("f-vs-gt")?.value || "all";
+  const search = ($("f-search")?.value || "").trim().toLowerCase();
+  const sort = $("f-sort")?.value || "name";
   const prompts = activePrompts();
 
   let rows = PAYLOAD.records.filter((d) => {
@@ -271,6 +275,8 @@ function gtTag(d) {
 
 function render() {
   if (!PAYLOAD.records.length) return;
+  const grid = $("grid");
+  if (!grid) return;
   const prompts = activePrompts();
   const rows = filterData();
   const shown = rows.slice(0, displayLimit);
@@ -290,13 +296,15 @@ function render() {
   const nDepth = rows.filter((d) => d.has_depth).length;
   extra += ` · ${nDepth} with depth`;
 
-  document.getElementById("stats").textContent =
-    `${rows.length} / ${PAYLOAD.records.length} images · ${nDisagree} disagreements` +
-    ` · ${prompts.length} prompt(s)` +
-    extra +
-    (rows.length > displayLimit ? ` · ${shown.length} shown` : "");
+  const stats = $("stats");
+  if (stats) {
+    stats.textContent =
+      `${rows.length} / ${PAYLOAD.records.length} images · ${nDisagree} disagreements` +
+      ` · ${prompts.length} prompt(s)` +
+      extra +
+      (rows.length > displayLimit ? ` · ${shown.length} shown` : "");
+  }
 
-  const grid = document.getElementById("grid");
   grid.replaceChildren();
   const colStyle =
     prompts.length > 0
@@ -333,7 +341,8 @@ function render() {
 
   colorizeDepthImages(grid);
 
-  const more = document.getElementById("load-more");
+  const more = $("load-more");
+  if (!more) return;
   if (rows.length > displayLimit) {
     more.style.display = "block";
     more.textContent = `Show more (${rows.length - displayLimit} left)`;
@@ -347,7 +356,8 @@ function openLightbox(id) {
   if (!d) return;
   const prompts = activePrompts();
   const texts = TEXTS[id] || {};
-  const lbVisual = document.getElementById("lb-visual");
+  const lbVisual = $("lb-visual");
+  if (!lbVisual) return;
   lbVisual.innerHTML = buildVisualBlock(d);
   colorizeDepthImages(lbVisual);
 
@@ -383,8 +393,10 @@ function openLightbox(id) {
 }
 
 function closeLightbox() {
-  document.getElementById("lightbox").classList.remove("open");
-  document.getElementById("lb-visual").replaceChildren();
+  const lightbox = $("lightbox");
+  if (lightbox) lightbox.classList.remove("open");
+  const lbVisual = $("lb-visual");
+  if (lbVisual) lbVisual.replaceChildren();
 }
 
 function openPromptModal(key) {
@@ -427,7 +439,9 @@ function renderPromptChips() {
 }
 
 function bindPromptLinks() {
-  document.getElementById("grid").addEventListener("click", (e) => {
+  const grid = $("grid");
+  if (!grid) return;
+  grid.addEventListener("click", (e) => {
     const link = e.target.closest(".prompt-link");
     if (!link) return;
     e.stopPropagation();
@@ -436,52 +450,67 @@ function bindPromptLinks() {
   });
 }
 
+function onClick(id, handler) {
+  const el = $(id);
+  if (el) el.addEventListener("click", handler);
+}
+
 function bindUi() {
-  document.getElementById("btn-prompts-all").onclick = () => {
+  onClick("btn-prompts-all", () => {
     setChipGroup("chips-prompts", true);
     liveRender();
-  };
-  document.getElementById("btn-prompts-none").onclick = () => {
+  });
+  onClick("btn-prompts-none", () => {
     setChipGroup("chips-prompts", false);
     liveRender();
-  };
-  document.getElementById("btn-gt-all").onclick = () => {
+  });
+  onClick("btn-gt-all", () => {
     setChipGroup("chips-gt", true);
     liveRender();
-  };
-  document.getElementById("btn-gt-none").onclick = () => {
+  });
+  onClick("btn-gt-none", () => {
     setChipGroup("chips-gt", false);
     liveRender();
-  };
-  document.getElementById("btn-pred-all").onclick = () => {
+  });
+  onClick("btn-pred-all", () => {
     setChipGroup("chips-pred", true);
     liveRender();
-  };
-  document.getElementById("btn-pred-none").onclick = () => {
+  });
+  onClick("btn-pred-none", () => {
     setChipGroup("chips-pred", false);
     liveRender();
-  };
-  document.getElementById("load-more").onclick = () => {
+  });
+  onClick("load-more", () => {
     displayLimit += DISPLAY_STEP;
     render();
-  };
-  document.getElementById("lightbox").addEventListener("click", (e) => {
-    if (e.target.id === "lightbox") closeLightbox();
   });
-  document.querySelector(".close").onclick = closeLightbox;
-  document.getElementById("prompt-modal-close").onclick = closePromptModal;
-  document.getElementById("prompt-modal").addEventListener("click", (e) => {
-    if (e.target.id === "prompt-modal") closePromptModal();
+  const lightbox = $("lightbox");
+  if (lightbox) {
+    lightbox.addEventListener("click", (e) => {
+      if (e.target.id === "lightbox") closeLightbox();
+    });
+  }
+  document.querySelectorAll(".close").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      closeLightbox();
+      closePromptModal();
+    });
   });
+  const promptModal = $("prompt-modal");
+  if (promptModal) {
+    promptModal.addEventListener("click", (e) => {
+      if (e.target.id === "prompt-modal") closePromptModal();
+    });
+  }
 
   bindPromptLinks();
 
   ["f-disagree", "f-depth", "f-vs-gt", "f-sort"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener("change", liveRender);
+    const el = $(id);
+    if (el) el.addEventListener("change", liveRender);
   });
-  document.getElementById("f-search").addEventListener("input", liveRender);
+  const search = $("f-search");
+  if (search) search.addEventListener("input", liveRender);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       closeLightbox();
@@ -536,12 +565,15 @@ async function init() {
     render();
     errEl.style.display = "none";
   } catch (err) {
-    document.getElementById("stats").textContent = "Load error";
-    errEl.style.display = "block";
-    errEl.textContent =
-      "Impossible de charger les données (data.js / data.json). " +
-      "Relancez: python3 compare_prompt_gallery.py — " +
-      err.message;
+    const stats = $("stats");
+    if (stats) stats.textContent = "Load error";
+    if (errEl) {
+      errEl.style.display = "block";
+      errEl.textContent =
+        "Impossible de charger les données (data.js / data.json). " +
+        "Relancez: python3 compare_prompt_gallery.py — " +
+        err.message;
+    }
     console.error(err);
   }
 }
