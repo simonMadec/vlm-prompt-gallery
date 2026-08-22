@@ -69,6 +69,11 @@
       font-weight: 600; margin-right: 0.2rem; }
     .tag-gt { background: #00ff88; color: #0d1117; }
     .tag-nogt { background: #30363d; color: #e6edf3; }
+    .tag-coarse { background: #388bfd; color: #fff; }
+    .pred-row { display: flex; flex-direction: column; gap: 0.12rem; }
+    .pred-k { font-size: 0.65rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.04em; }
+    .pred-coarse { color: #79c0ff; font-size: 0.8rem; font-weight: 600; }
+    .pred-coarse.inferred { font-style: italic; color: #a5d6ff; }
     .tag-agree { background: #238636; color: #fff; }
     .tag-disagree { background: #9e6a03; color: #fff; }
     .tag-depth { background: #8957e5; color: #fff; }
@@ -157,7 +162,16 @@
     </div>
     <div class="filter-group">
       <div class="group-head">
-        <span>Ground truth</span>
+        <span>GT coarse</span>
+        <span class="hint">none checked = all</span>
+        <button type="button" class="btn-mini" id="btn-gt-coarse-all">all</button>
+        <button type="button" class="btn-mini" id="btn-gt-coarse-none">none</button>
+      </div>
+      <div id="chips-gt-coarse" class="chip-list"></div>
+    </div>
+    <div class="filter-group">
+      <div class="group-head">
+        <span>GT fine</span>
         <span class="hint">none checked = all</span>
         <button type="button" class="btn-mini" id="btn-gt-all">all</button>
         <button type="button" class="btn-mini" id="btn-gt-none">none</button>
@@ -166,7 +180,16 @@
     </div>
     <div class="filter-group">
       <div class="group-head">
-        <span>Prediction</span>
+        <span>Pred coarse</span>
+        <span class="hint">none checked = all</span>
+        <button type="button" class="btn-mini" id="btn-pred-coarse-all">all</button>
+        <button type="button" class="btn-mini" id="btn-pred-coarse-none">none</button>
+      </div>
+      <div id="chips-pred-coarse" class="chip-list"></div>
+    </div>
+    <div class="filter-group">
+      <div class="group-head">
+        <span>Pred fine</span>
         <span class="hint">none checked = all</span>
         <button type="button" class="btn-mini" id="btn-pred-all">all</button>
         <button type="button" class="btn-mini" id="btn-pred-none">none</button>
@@ -187,8 +210,8 @@
     <button class="close" id="prompt-modal-close">×</button>
     <div id="prompt-modal-inner"></div>
   </div>
-  <script src="data.js?v=177108128e"></script>
-  <script src="texts.js?v=177108128e"></script>
-  <script src="gallery.js?v=177108128e"></script>
+  <script src="data.js?v=5f9f6c6200"></script>
+  <script src="texts.js?v=5f9f6c6200"></script>
+  <script src="gallery.js?v=5f9f6c6200"></script>
 </body>
 </html>

@@ -43,27 +43,44 @@ function toEn(label) {
 
 function predEn(run) {
   if (!run) return "";
-  return run.label_en || run.class_name_en || toEn(run.label) || run.label || "";
+  return run.fine || run.label_en || run.class_name_en || toEn(run.label) || run.label || "";
+}
+
+function predCoarse(run) {
+  if (!run) return "";
+  return run.coarse || "";
 }
 
 function gtEn(d) {
-  return d.ground_truth_en || toEn(d.ground_truth_display) || toEn(d.ground_truth) || "";
+  return d.ground_truth_fine || d.ground_truth_en || toEn(d.ground_truth_display) || toEn(d.ground_truth) || "";
+}
+
+function gtCoarse(d) {
+  return d.ground_truth_coarse || "";
+}
+
+function uniqCoarse(vals) {
+  const set = new Set(vals.filter(Boolean));
+  const order = PAYLOAD.coarse_order || [];
+  return [...order.filter((k) => set.has(k)), ...[...set].filter((k) => !order.includes(k)).sort()];
 }
 
 function gtTag(d) {
-  const en = gtEn(d);
+  const fine = gtEn(d);
+  const coarse = gtCoarse(d);
   const raw = d.ground_truth || d.ground_truth_display || "";
-  if (!en && !raw) {
-    return `<span class="tag tag-nogt">GT: —</span>`;
-  }
-  const fr = raw && raw !== en
-    ? ` <span class="gt-fr">(${esc(raw)})</span>`
-    : "";
   const src = d.ground_truth_source && d.ground_truth_source !== "final"
     ? ` <span class="gt-fr">${esc(d.ground_truth_source)}</span>`
     : "";
   const cls = d.ground_truth ? "tag-gt" : "tag-nogt";
-  return `<span class="tag ${cls}">GT: ${esc(en || raw)}${fr}${src}</span>`;
+  const coarseTag = coarse
+    ? `<span class="tag tag-coarse">GT coarse: ${esc(coarse)}</span>`
+    : `<span class="tag tag-nogt">GT coarse: —</span>`;
+  const fineText = fine || raw || "—";
+  const fr = raw && fine && raw !== fine
+    ? ` <span class="gt-fr">(${esc(raw)})</span>`
+    : "";
+  return `${coarseTag}<span class="tag ${cls}">GT fine: ${esc(fineText)}${fr}${src}</span>`;
 }
 
 function liveRender() {
@@ -200,7 +217,9 @@ function buildVisualBlock(d) {
 function filterData() {
   const disagreeOnly = $("f-disagree")?.checked;
   const gt = checkedValues("chips-gt");
+  const gtCoarseSel = checkedValues("chips-gt-coarse");
   const pred = checkedValues("chips-pred");
+  const predCoarseSel = checkedValues("chips-pred-coarse");
   const vsGt = $("f-vs-gt")?.value || "all";
   const search = ($("f-search")?.value || "").trim().toLowerCase();
   const sort = $("f-sort")?.value || "name";
@@ -209,10 +228,15 @@ function filterData() {
   let rows = PAYLOAD.records.filter((d) => {
     if (disagreeOnly && labelsAgree(d, prompts)) return false;
     if (gt.length && !gt.includes(gtEn(d) || "(none)")) return false;
+    if (gtCoarseSel.length && !gtCoarseSel.includes(gtCoarse(d) || "(none)")) return false;
     if (search && !d.id.toLowerCase().includes(search)) return false;
     if (pred.length) {
       const labels = prompts.map((k) => predEn(runOf(d, k))).filter(Boolean);
       if (!labels.some((l) => pred.includes(l))) return false;
+    }
+    if (predCoarseSel.length) {
+      const coarses = prompts.map((k) => predCoarse(runOf(d, k))).filter(Boolean);
+      if (!coarses.some((c) => predCoarseSel.includes(c))) return false;
     }
     if (vsGt !== "all" && d.ground_truth) {
       const scored = prompts.map((k) => runOf(d, k)).filter(Boolean);
@@ -229,7 +253,8 @@ function filterData() {
   rows.sort((a, b) => {
     switch (sort) {
       case "gt":
-        return (gtEn(a) || "").localeCompare(gtEn(b) || "", "en")
+        return (gtCoarse(a) || "").localeCompare(gtCoarse(b) || "", "en")
+          || (gtEn(a) || "").localeCompare(gtEn(b) || "", "en")
           || a.id.localeCompare(b.id);
       case "conf-gap":
         return confGap(b, prompts) - confGap(a, prompts) || a.id.localeCompare(b.id);
@@ -270,12 +295,16 @@ function predCell(d, key, texts) {
   const cls = d.ground_truth
     ? (run.correct ? "correct" : "incorrect")
     : "";
-  const level = run.level1 ? `<div style="color:#8b949e;font-size:0.72rem">${esc(run.level1)}</div>` : "";
-  const label = predEn(run) || run.label || "—";
+  const fine = predEn(run) || run.label || "—";
+  const coarse = predCoarse(run);
+  const coarseCls = run.coarse_inferred ? "pred-coarse inferred" : "pred-coarse";
+  const coarseNote = run.coarse_inferred ? " (from fine)" : "";
   return `<div class="pred ${cls}">
     <div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(key)}</div>
-    <div class="pred-label">${esc(label)} <span class="score">${pct(run.confidence)}</span></div>
-    ${level}
+    <div class="pred-row">
+      <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
+      <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
+    </div>
     ${explainBlock(run, texts && texts[key])}
   </div>`;
 }
@@ -383,11 +412,16 @@ function openLightbox(id) {
       return `<div class="pred missing"><div class="pred-key">${esc(key)}</div><div>absent</div></div>`;
     }
     const cls = d.ground_truth ? (run.correct ? "correct" : "incorrect") : "";
-    const label = predEn(run) || run.label || "—";
+    const fine = predEn(run) || run.label || "—";
+    const coarse = predCoarse(run);
+    const coarseCls = run.coarse_inferred ? "pred-coarse inferred" : "pred-coarse";
+    const coarseNote = run.coarse_inferred ? " (from fine)" : "";
     return `<div class="pred ${cls}">
       <div class="pred-key">${esc(key)}</div>
-      <div class="pred-label">${esc(label)} <span class="score">${pct(run.confidence)}</span></div>
-      ${run.level1 ? `<div style="color:#8b949e">${esc(run.level1)}</div>` : ""}
+      <div class="pred-row">
+        <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
+        <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
+      </div>
       ${explainBlock(run, t)}
     </div>`;
   }).join("");
@@ -462,31 +496,23 @@ function onClick(id, handler) {
   if (el) el.addEventListener("click", handler);
 }
 
+function bindChipPair(allId, noneId, groupId) {
+  onClick(allId, () => {
+    setChipGroup(groupId, true);
+    liveRender();
+  });
+  onClick(noneId, () => {
+    setChipGroup(groupId, false);
+    liveRender();
+  });
+}
+
 function bindUi() {
-  onClick("btn-prompts-all", () => {
-    setChipGroup("chips-prompts", true);
-    liveRender();
-  });
-  onClick("btn-prompts-none", () => {
-    setChipGroup("chips-prompts", false);
-    liveRender();
-  });
-  onClick("btn-gt-all", () => {
-    setChipGroup("chips-gt", true);
-    liveRender();
-  });
-  onClick("btn-gt-none", () => {
-    setChipGroup("chips-gt", false);
-    liveRender();
-  });
-  onClick("btn-pred-all", () => {
-    setChipGroup("chips-pred", true);
-    liveRender();
-  });
-  onClick("btn-pred-none", () => {
-    setChipGroup("chips-pred", false);
-    liveRender();
-  });
+  bindChipPair("btn-prompts-all", "btn-prompts-none", "chips-prompts");
+  bindChipPair("btn-gt-all", "btn-gt-none", "chips-gt");
+  bindChipPair("btn-gt-coarse-all", "btn-gt-coarse-none", "chips-gt-coarse");
+  bindChipPair("btn-pred-all", "btn-pred-none", "chips-pred");
+  bindChipPair("btn-pred-coarse-all", "btn-pred-coarse-none", "chips-pred-coarse");
   onClick("load-more", () => {
     displayLimit += DISPLAY_STEP;
     render();
@@ -556,14 +582,20 @@ async function init() {
     }
 
     fillChipGroup("chips-prompts", PAYLOAD.prompts, { checked: true });
+    fillChipGroup("chips-gt-coarse", uniqCoarse(PAYLOAD.records.map((d) => gtCoarse(d) || "(none)")));
     fillChipGroup("chips-gt", uniq(PAYLOAD.records.map((d) => gtEn(d) || "(none)")));
     const predLabels = [];
+    const predCoarses = [];
     for (const d of PAYLOAD.records) {
       for (const k of PAYLOAD.prompts) {
-        const lab = predEn(runOf(d, k));
+        const run = runOf(d, k);
+        const lab = predEn(run);
         if (lab) predLabels.push(lab);
+        const c = predCoarse(run);
+        if (c) predCoarses.push(c);
       }
     }
+    fillChipGroup("chips-pred-coarse", uniqCoarse(predCoarses));
     fillChipGroup("chips-pred", uniq(predLabels));
 
     renderPromptSummary();
