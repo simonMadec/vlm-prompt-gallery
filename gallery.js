@@ -47,7 +47,23 @@ function predEn(run) {
 }
 
 function gtEn(d) {
-  return d.ground_truth_en || toEn(d.ground_truth) || d.ground_truth || "";
+  return d.ground_truth_en || toEn(d.ground_truth_display) || toEn(d.ground_truth) || "";
+}
+
+function gtTag(d) {
+  const en = gtEn(d);
+  const raw = d.ground_truth || d.ground_truth_display || "";
+  if (!en && !raw) {
+    return `<span class="tag tag-nogt">GT: —</span>`;
+  }
+  const fr = raw && raw !== en
+    ? ` <span class="gt-fr">(${esc(raw)})</span>`
+    : "";
+  const src = d.ground_truth_source && d.ground_truth_source !== "final"
+    ? ` <span class="gt-fr">${esc(d.ground_truth_source)}</span>`
+    : "";
+  const cls = d.ground_truth ? "tag-gt" : "tag-nogt";
+  return `<span class="tag ${cls}">GT: ${esc(en || raw)}${fr}${src}</span>`;
 }
 
 function liveRender() {
@@ -192,7 +208,7 @@ function filterData() {
 
   let rows = PAYLOAD.records.filter((d) => {
     if (disagreeOnly && labelsAgree(d, prompts)) return false;
-    if (gt.length && !gt.includes(gtEn(d))) return false;
+    if (gt.length && !gt.includes(gtEn(d) || "(none)")) return false;
     if (search && !d.id.toLowerCase().includes(search)) return false;
     if (pred.length) {
       const labels = prompts.map((k) => predEn(runOf(d, k))).filter(Boolean);
@@ -262,15 +278,6 @@ function predCell(d, key, texts) {
     ${level}
     ${explainBlock(run, texts && texts[key])}
   </div>`;
-}
-
-function gtTag(d) {
-  const en = gtEn(d);
-  if (!en && !d.ground_truth) return "";
-  const fr = d.ground_truth && d.ground_truth !== en
-    ? ` <span class="gt-fr">(${esc(d.ground_truth)})</span>`
-    : "";
-  return `<span class="tag tag-gt">GT: ${esc(en || d.ground_truth)}${fr}</span>`;
 }
 
 function render() {
@@ -549,7 +556,7 @@ async function init() {
     }
 
     fillChipGroup("chips-prompts", PAYLOAD.prompts, { checked: true });
-    fillChipGroup("chips-gt", uniq(PAYLOAD.records.map((d) => gtEn(d))));
+    fillChipGroup("chips-gt", uniq(PAYLOAD.records.map((d) => gtEn(d) || "(none)")));
     const predLabels = [];
     for (const d of PAYLOAD.records) {
       for (const k of PAYLOAD.prompts) {
