@@ -69,17 +69,18 @@ function gtCell(d) {
   const fine = gtEn(d);
   const coarse = gtCoarse(d);
   const raw = d.ground_truth || d.ground_truth_display || "";
+  const missing = !fine && !coarse && !raw;
   const fr = raw && fine && raw !== fine
     ? ` <span class="gt-fr">(${esc(raw)})</span>`
     : "";
   const src = d.ground_truth_source && d.ground_truth_source !== "final"
     ? ` <span class="gt-fr">${esc(d.ground_truth_source)}</span>`
     : "";
-  return `<div class="pred gt-cell">
+  return `<div class="pred gt-cell${missing ? " no-gt" : ""}">
     <div class="pred-key">ground truth</div>
     <div class="pred-row">
-      <div><span class="pred-k">coarse</span> <span class="pred-coarse">${esc(coarse || "—")}</span></div>
-      <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine || raw || "—")}${fr}${src}</div>
+      <div><span class="pred-k">coarse</span> <span class="pred-coarse">${esc(missing ? "—" : (coarse || "—"))}</span></div>
+      <div class="pred-label"><span class="pred-k">fine</span> ${esc(missing ? "no label in CSV" : (fine || raw || "—"))}${fr}${src}</div>
     </div>
   </div>`;
 }
@@ -300,8 +301,12 @@ function predCell(d, key, texts) {
   const coarse = predCoarse(run);
   const coarseCls = run.coarse_inferred ? "pred-coarse inferred" : "pred-coarse";
   const coarseNote = run.coarse_inferred ? " (from fine)" : "";
+  const model = run.model
+    ? `<div class="model-link" data-model="${esc(run.model)}">${esc(run.model)}</div>`
+    : "";
   return `<div class="pred ${cls}">
     <div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(key)}</div>
+    ${model}
     <div class="pred-row">
       <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
       <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
@@ -368,6 +373,7 @@ function render() {
       </div>`;
     card.addEventListener("click", (e) => {
       if (e.target.closest(".prompt-link")) return;
+      if (e.target.closest(".model-link")) return;
       if (e.target.closest("details.explain")) return;
       openLightbox(d.id);
     });
@@ -414,7 +420,8 @@ function openLightbox(id) {
     const coarseCls = run.coarse_inferred ? "pred-coarse inferred" : "pred-coarse";
     const coarseNote = run.coarse_inferred ? " (from fine)" : "";
     return `<div class="pred ${cls}">
-      <div class="pred-key">${esc(key)}</div>
+      <div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(key)}</div>
+      ${run.model ? `<div class="model-link" data-model="${esc(run.model)}">${esc(run.model)}</div>` : ""}
       <div class="pred-row">
         <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
         <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
@@ -441,13 +448,38 @@ function openPromptModal(key) {
   const catalog = PAYLOAD.prompt_catalog || {};
   const meta = catalog[key];
   if (!meta) return;
-  const inner = document.getElementById("prompt-modal-inner");
+  openInfoModal(
+    `<code>${esc(key)}</code>`,
+    `${meta.chars} characters · text sent to the model`,
+    meta.text || "",
+    `<p class="full-link"><a href="prompts.html#${esc(key)}">Open full prompts page</a></p>`
+  );
+}
+
+function openModelModal(name) {
+  const catalog = PAYLOAD.model_catalog || {};
+  const meta = catalog[name] || { name, parameters: {}, token_usage: {} };
+  const params = { ...(meta.parameters || {}) };
+  if (meta.token_usage && Object.keys(meta.token_usage).length) {
+    params.token_usage = meta.token_usage;
+  }
+  const text = JSON.stringify(params, null, 2);
+  openInfoModal(
+    `<code>${esc(name)}</code>`,
+    "Model inference parameters",
+    text || "{}"
+  );
+}
+
+function openInfoModal(titleHtml, sub, preText, extraHtml = "") {
+  const inner = $("prompt-modal-inner");
+  if (!inner) return;
   inner.innerHTML = `
-    <h2><code>${esc(key)}</code></h2>
-    <p class="sub">${meta.chars} characters · text sent to the model</p>
-    <pre>${esc(meta.text)}</pre>
-    <p class="full-link"><a href="prompts.html#${esc(key)}">Open full prompts page</a></p>`;
-  document.getElementById("prompt-modal").classList.add("open");
+    <h2>${titleHtml}</h2>
+    <p class="sub">${esc(sub)}</p>
+    <pre>${esc(preText)}</pre>
+    ${extraHtml}`;
+  $("prompt-modal")?.classList.add("open");
 }
 
 function closePromptModal() {
@@ -462,7 +494,7 @@ function renderPromptSummary() {
 }
 
 function renderPromptChips() {
-  const el = document.getElementById("prompt-chips");
+  const el = $("prompt-chips");
   if (!el) return;
   el.replaceChildren();
   for (const key of PAYLOAD.prompts) {
@@ -476,10 +508,33 @@ function renderPromptChips() {
   }
 }
 
+function renderModelChips() {
+  const el = $("model-chips");
+  if (!el) return;
+  el.replaceChildren();
+  const catalog = PAYLOAD.model_catalog || {};
+  const names = Object.keys(catalog).sort();
+  for (const name of names) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "prompt-chip";
+    btn.textContent = name;
+    btn.title = "Click to view model parameters";
+    btn.addEventListener("click", () => openModelModal(name));
+    el.appendChild(btn);
+  }
+}
+
 function bindPromptLinks() {
-  const grid = $("grid");
-  if (!grid) return;
-  grid.addEventListener("click", (e) => {
+  const root = document.body;
+  root.addEventListener("click", (e) => {
+    const modelLink = e.target.closest(".model-link");
+    if (modelLink) {
+      e.stopPropagation();
+      const name = modelLink.getAttribute("data-model");
+      if (name) openModelModal(name);
+      return;
+    }
     const link = e.target.closest(".prompt-link");
     if (!link) return;
     e.stopPropagation();
@@ -597,6 +652,7 @@ async function init() {
 
     renderPromptSummary();
     renderPromptChips();
+    renderModelChips();
     bindUi();
     render();
     errEl.style.display = "none";

@@ -74,7 +74,12 @@
     .pred-k { font-size: 0.65rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.04em; }
     .pred-coarse { color: #79c0ff; font-size: 0.8rem; font-weight: 600; }
     .pred.gt-cell { border-color: #00ff88; background: #102017; }
-    .pred.gt-cell .pred-key { color: #00ff88; }
+    .pred.gt-cell.no-gt { border-color: #f0883e; background: #241c12; }
+    .pred.gt-cell.no-gt .pred-key { color: #f0883e; }
+    .model-link { font-size: 0.72rem; color: #d2a8ff; cursor: pointer; text-transform: none;
+      letter-spacing: 0; text-decoration: underline; text-decoration-color: #484f58; }
+    .model-link:hover { color: #e6ccff; }
+    #model-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.4rem; }
     .tag-agree { background: #238636; color: #fff; }
     .tag-disagree { background: #9e6a03; color: #fff; }
     .tag-depth { background: #8957e5; color: #fff; }
@@ -119,9 +124,10 @@
     <div class="header-nav">
       <a href="prompts.html">Voir les prompts (texte complet)</a>
       <span style="color:#8b949e">·</span>
-      <span style="color:#8b949e;font-size:0.85rem">Click a prompt name to view its text</span>
+      <span style="color:#8b949e;font-size:0.85rem">Click a prompt or model name to view text / parameters</span>
     </div>
     <div id="prompt-chips"></div>
+    <div id="model-chips"></div>
     <div id="stats">Chargement…</div>
   </header>
   <div id="load-error"></div>
@@ -211,8 +217,8 @@
     <button class="close" id="prompt-modal-close">×</button>
     <div id="prompt-modal-inner"></div>
   </div>
-  <script src="data.js?v=0bcaac56b8"></script>
-  <script src="texts.js?v=0bcaac56b8"></script>
-  <script src="gallery.js?v=0bcaac56b8"></script>
+  <script src="data.js?v=61c1afb3b0"></script>
+  <script src="texts.js?v=61c1afb3b0"></script>
+  <script src="gallery.js?v=61c1afb3b0"></script>
 </body>
 </html>
