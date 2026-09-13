@@ -105,7 +105,7 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function fillChipGroup(containerId, values, { checked = false } = {}) {
+function fillChipGroup(containerId, values, { checked = false, labels = {} } = {}) {
   const el = $(containerId);
   if (!el) return;
   el.replaceChildren();
@@ -118,14 +118,41 @@ function fillChipGroup(containerId, values, { checked = false } = {}) {
     inp.checked = checked;
     inp.addEventListener("change", liveRender);
     lab.appendChild(inp);
-    lab.appendChild(document.createTextNode(" " + v));
+    lab.appendChild(document.createTextNode(" " + (labels[v] || v)));
     el.appendChild(lab);
   }
 }
 
+function promptTitle(key) {
+  const catalog = PAYLOAD.prompt_catalog || {};
+  return (catalog[key] && catalog[key].title_en) || key;
+}
+
+function runInputMode(run) {
+  if (!run) return "rgb";
+  return run.input_mode || "rgb";
+}
+
+function inputModeForPrompt(key) {
+  for (const d of PAYLOAD.records || []) {
+    const run = runOf(d, key);
+    if (run) return runInputMode(run);
+  }
+  return "rgb";
+}
+
+function selectedInputModes() {
+  return checkedValues("chips-input-mode");
+}
+
 function activePrompts() {
   const sel = checkedValues("chips-prompts");
-  return PAYLOAD.prompts.filter((k) => sel.includes(k));
+  const modes = selectedInputModes();
+  return PAYLOAD.prompts.filter((k) => {
+    if (!sel.includes(k)) return false;
+    if (!modes.includes(inputModeForPrompt(k))) return false;
+    return true;
+  });
 }
 
 function labelsAgree(d, keys) {
@@ -139,7 +166,7 @@ function accuracyForPrompts(keys) {
   const acc = st.per_prompt_accuracy || {};
   return keys
     .filter((k) => acc[k] != null)
-    .map((k) => `${k} ${pct(acc[k])}`);
+    .map((k) => `${promptTitle(k)} ${pct(acc[k])}`);
 }
 
 function confGap(d, keys) {
@@ -288,10 +315,16 @@ function explainBlock(run, texts) {
   return `<details class="explain"><summary>explanation</summary>${body}</details>`;
 }
 
+function inputModeBadge(run) {
+  const mode = runInputMode(run);
+  return `<span class="tag tag-input">${esc(mode)}</span>`;
+}
+
 function predCell(d, key, texts) {
+  const title = promptTitle(key);
   const run = runOf(d, key);
   if (!run) {
-    return `<div class="pred missing"><div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(key)}</div>
+    return `<div class="pred missing"><div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(title)}</div>
       <div class="pred-label">absent</div></div>`;
   }
   const cls = d.ground_truth
@@ -305,8 +338,9 @@ function predCell(d, key, texts) {
     ? `<div class="model-link" data-model="${esc(run.model)}">${esc(run.model)}</div>`
     : "";
   return `<div class="pred ${cls}">
-    <div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(key)}</div>
+    <div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(title)}</div>
     ${model}
+    ${inputModeBadge(run)}
     <div class="pred-row">
       <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
       <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
@@ -412,7 +446,7 @@ function openLightbox(id) {
     const run = runOf(d, key);
     const t = texts[key] || {};
     if (!run) {
-      return `<div class="pred missing"><div class="pred-key">${esc(key)}</div><div>absent</div></div>`;
+      return `<div class="pred missing"><div class="pred-key">${esc(promptTitle(key))}</div><div>absent</div></div>`;
     }
     const cls = d.ground_truth ? (run.correct ? "correct" : "incorrect") : "";
     const fine = predEn(run) || run.label || "—";
@@ -420,8 +454,9 @@ function openLightbox(id) {
     const coarseCls = run.coarse_inferred ? "pred-coarse inferred" : "pred-coarse";
     const coarseNote = run.coarse_inferred ? " (from fine)" : "";
     return `<div class="pred ${cls}">
-      <div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(key)}</div>
+      <div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(promptTitle(key))}</div>
       ${run.model ? `<div class="model-link" data-model="${esc(run.model)}">${esc(run.model)}</div>` : ""}
+      ${inputModeBadge(run)}
       <div class="pred-row">
         <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
         <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
@@ -489,7 +524,7 @@ function closePromptModal() {
 function renderPromptSummary() {
   const el = document.getElementById("prompt-summary");
   if (!el) return;
-  const parts = PAYLOAD.prompts.map((k) => `<code>${esc(k)}</code>`);
+  const parts = PAYLOAD.prompts.map((k) => `<code>${esc(promptTitle(k))}</code>`);
   el.innerHTML = `${parts.join(" · ")} — ${PAYLOAD.records.length} images.`;
 }
 
@@ -501,7 +536,7 @@ function renderPromptChips() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "prompt-chip";
-    btn.textContent = key;
+    btn.textContent = promptTitle(key);
     btn.title = "Click to view prompt text";
     btn.addEventListener("click", () => openPromptModal(key));
     el.appendChild(btn);
@@ -561,6 +596,7 @@ function bindChipPair(allId, noneId, groupId) {
 
 function bindUi() {
   bindChipPair("btn-prompts-all", "btn-prompts-none", "chips-prompts");
+  bindChipPair("btn-input-mode-all", "btn-input-mode-none", "chips-input-mode");
   bindChipPair("btn-gt-all", "btn-gt-none", "chips-gt");
   bindChipPair("btn-gt-coarse-all", "btn-gt-coarse-none", "chips-gt-coarse");
   bindChipPair("btn-pred-all", "btn-pred-none", "chips-pred");
@@ -633,7 +669,18 @@ async function init() {
       throw new Error("aucune image dans les données");
     }
 
-    fillChipGroup("chips-prompts", PAYLOAD.prompts, { checked: true });
+    const promptLabels = Object.fromEntries(
+      PAYLOAD.prompts.map((k) => [k, promptTitle(k)])
+    );
+    fillChipGroup("chips-prompts", PAYLOAD.prompts, { checked: true, labels: promptLabels });
+    const inputModes = PAYLOAD.input_modes && PAYLOAD.input_modes.length
+      ? PAYLOAD.input_modes
+      : uniq(
+          PAYLOAD.records.flatMap((d) =>
+            Object.values(d.runs || {}).map((r) => runInputMode(r))
+          )
+        );
+    fillChipGroup("chips-input-mode", inputModes, { checked: true });
     fillChipGroup("chips-gt-coarse", uniqCoarse(PAYLOAD.records.map((d) => gtCoarse(d) || "(none)")));
     fillChipGroup("chips-gt", uniq(PAYLOAD.records.map((d) => gtEn(d) || "(none)")));
     const predLabels = [];
