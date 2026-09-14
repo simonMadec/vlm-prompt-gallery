@@ -223,15 +223,59 @@ function labelsAgree(d, keys, columns) {
   return labels.every((l) => l === labels[0]);
 }
 
-function accuracyForColumns(cols) {
-  const st = PAYLOAD.stats || {};
-  const pAcc = st.per_prompt_accuracy || {};
-  return cols
+const CONF_THRESHOLDS = [0.7, 0.8, 0.9];
+
+function columnLabel(col) {
+  const mid = promptModelId(col.key);
+  const prompt = promptTitle(col.key);
+  return mid ? `${prompt} · ${modelTitle(mid)}` : prompt;
+}
+
+function scoredAt(col, minConf) {
+  const runs = [];
+  for (const d of PAYLOAD.records || []) {
+    if (!d.ground_truth) continue;
+    const run = runForColumn(d, col);
+    if (!run) continue;
+    if (minConf != null) {
+      const conf = run.confidence;
+      if (conf == null || conf < minConf) continue;
+    }
+    runs.push(run);
+  }
+  return runs;
+}
+
+function fmtAcc(runs) {
+  if (!runs.length) return "—";
+  const nOk = runs.filter((r) => r.correct).length;
+  return `${pct(nOk / runs.length)}<span class="acc-n">${nOk}/${runs.length}</span>`;
+}
+
+function renderAccTable(columns) {
+  const el = $("acc-panel");
+  if (!el) return;
+  if (!columns.length) {
+    el.innerHTML = "";
+    return;
+  }
+  const heads = ["run", "all", ...CONF_THRESHOLDS.map((t) => `≥${Math.round(t * 100)}%`)]
+    .map((h) => `<th>${esc(h)}</th>`)
+    .join("");
+  const body = columns
     .map((col) => {
-      const v = pAcc[col.key];
-      return v != null ? `${promptTitle(col.key)} ${pct(v)}` : null;
+      const cells = [null, ...CONF_THRESHOLDS]
+        .map((t) => `<td>${fmtAcc(scoredAt(col, t))}</td>`)
+        .join("");
+      return `<tr><th>${esc(columnLabel(col))}</th>${cells}</tr>`;
     })
-    .filter(Boolean);
+    .join("");
+  el.innerHTML = `
+    <table>
+      <caption>Précision vs GT (classe fine) parmi les prédictions avec confiance ≥ seuil. Fraction = correct / conservés.</caption>
+      <thead><tr>${heads}</tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
 }
 
 function confGap(d, keys, columns) {
@@ -421,8 +465,6 @@ function render() {
       extra += ` · agree ${nAgree}/${comparable.length} (${pct(nAgree / comparable.length)})`;
     }
   }
-  const accBits = accuracyForColumns(columns);
-  if (accBits.length) extra += ` · vs GT: ${accBits.join(" · ")}`;
   const nDepth = rows.filter((d) => d.has_depth).length;
   extra += ` · ${nDepth} with depth`;
 
@@ -434,6 +476,7 @@ function render() {
       extra +
       (rows.length > displayLimit ? ` · ${shown.length} shown` : "");
   }
+  renderAccTable(columns);
 
   grid.replaceChildren();
 

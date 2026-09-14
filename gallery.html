@@ -11,6 +11,15 @@
     header h1 { font-size: 1.35rem; margin-bottom: 0.35rem; }
     header p { color: #8b949e; font-size: 0.9rem; }
     #stats { margin-top: 0.5rem; font-weight: 600; color: #58a6ff; }
+    #acc-panel { margin-top: 0.75rem; overflow-x: auto; color: #e6edf3; font-weight: 400; }
+    #acc-panel table { border-collapse: collapse; font-size: 0.78rem; min-width: 520px; }
+    #acc-panel th, #acc-panel td { padding: 0.28rem 0.55rem; text-align: left;
+      border-bottom: 1px solid #30363d; white-space: nowrap; }
+    #acc-panel thead th { color: #8b949e; font-weight: 600; }
+    #acc-panel tbody th { font-weight: 500; padding-left: 0; }
+    #acc-panel .acc-n { color: #8b949e; font-weight: 400; margin-left: 0.3rem; }
+    #acc-panel caption { caption-side: top; text-align: left; color: #8b949e;
+      font-size: 0.75rem; margin-bottom: 0.35rem; font-weight: 400; }
     #load-error { display: none; margin: 1rem 1.5rem; padding: 1rem; background: #3d1f1f;
       border: 1px solid #da3633; border-radius: 8px; color: #ffa198; line-height: 1.5; }
     .filters { display: flex; flex-direction: column; gap: 0.85rem;
@@ -130,6 +139,7 @@
     <div id="prompt-chips"></div>
     <div id="model-chips"></div>
     <div id="stats">Chargement…</div>
+    <div id="acc-panel"></div>
   </header>
   <div id="load-error"></div>
 
@@ -198,8 +208,8 @@
     <button class="close" id="prompt-modal-close">×</button>
     <div id="prompt-modal-inner"></div>
   </div>
-  <script src="data.js?v=9027b62d14"></script>
-  <script src="texts.js?v=9027b62d14"></script>
-  <script src="gallery.js?v=9027b62d14"></script>
+  <script src="data.js?v=a4a69da1d9"></script>
+  <script src="texts.js?v=a4a69da1d9"></script>
+  <script src="gallery.js?v=a4a69da1d9"></script>
 </body>
 </html>
