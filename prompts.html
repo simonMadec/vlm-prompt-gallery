@@ -30,7 +30,7 @@
     <p style="color:#8b949e">Texte exact envoyé au modèle pour chaque variante.</p>
     <p class="nav"><a href="gallery.html">← Retour à la galerie</a></p>
     <ul class="toc">
-      <li><a href="#hierarchical"><code>hierarchical</code></a> — Hierarchical</li><li><a href="#haiku_depth"><code>haiku_depth</code></a> — Haiku + depth</li><li><a href="#hierarchical_en_no_comment"><code>hierarchical_en_no_comment</code></a> — Hierarchical (no comment)</li><li><a href="#gt_aligned"><code>gt_aligned</code></a> — GT aligned</li><li><a href="#gemma4_local"><code>gemma4_local</code></a> — Gemma 4 31B (local 4-bit)</li>
+      <li><a href="#hierarchical"><code>hierarchical</code></a> — Hierarchical</li><li><a href="#haiku_depth"><code>haiku_depth</code></a> — Haiku + depth</li><li><a href="#hierarchical_en_no_comment"><code>hierarchical_en_no_comment</code></a> — Hierarchical (no comment)</li><li><a href="#gt_aligned"><code>gt_aligned</code></a> — GT aligned</li>
     </ul>
   </header>
 <section class="prompt-block" id="hierarchical">
@@ -327,10 +327,6 @@ Rules:
 JSON only:
 {&quot;class_name_en&quot;:&quot;&lt;exact label&gt;&quot;,&quot;confidence&quot;:&lt;0-1&gt;,&quot;cues&quot;:[&quot;&lt;cue&gt;&quot;],&quot;reasoning&quot;:&quot;&lt;1-2 sentences&gt;&quot;,&quot;usable_for_satellite_gt&quot;:&lt;true|false&gt;,&quot;reject_reason&quot;:null|&quot;unusable_image&quot;|&quot;ground_not_visible&quot;|&quot;mixed_plots&quot;|&quot;unknown_land_use&quot;}
 </pre>
-</section><section class="prompt-block" id="gemma4_local">
-  <h2><code>gemma4_local</code> — Gemma 4 31B (local 4-bit)</h2>
-  <p class="meta">277 caractères · source: landcover_prompts.py</p>
-  <pre>Embedded system prompt in run_gemma_batch.py / run_gemma_local.py — West African land-cover taxonomy (numeric codes 11–99): crops, orchards, fallow, savanna, built-up, water. Local inference: google/gemma-4-31B-it 4-bit NF4 on Tesla V100, max_soft_tokens=140, thinking enabled.</pre>
 </section>
 </body>
 </html>

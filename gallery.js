@@ -35,6 +35,16 @@ function runOf(d, key) {
   return (d.runs && d.runs[key]) || null;
 }
 
+function modelRunOf(d, key) {
+  return (d.model_runs && d.model_runs[key]) || null;
+}
+
+function modelTitle(key) {
+  const titles = PAYLOAD.model_titles || {};
+  const catalog = PAYLOAD.model_catalog || {};
+  return titles[key] || (catalog[key] && catalog[key].title) || key;
+}
+
 function toEn(label) {
   if (!label) return "";
   const map = PAYLOAD.label_fr_to_en || {};
@@ -155,23 +165,56 @@ function activePrompts() {
   });
 }
 
-function labelsAgree(d, keys) {
-  const labels = keys.map((k) => predEn(runOf(d, k))).filter(Boolean);
+function activeModels() {
+  const sel = checkedValues("chips-models");
+  return (PAYLOAD.models || []).filter((k) => sel.includes(k));
+}
+
+function activeColumns() {
+  const prompts = activePrompts().map((k) => ({ kind: "prompt", key: k }));
+  const models = activeModels().map((k) => ({ kind: "model", key: k }));
+  return [...prompts, ...models];
+}
+
+function runForColumn(d, col) {
+  return col.kind === "model" ? modelRunOf(d, col.key) : runOf(d, col.key);
+}
+
+function textKeyForColumn(col) {
+  return col.key;
+}
+
+function columnTitle(col) {
+  return col.kind === "model" ? modelTitle(col.key) : promptTitle(col.key);
+}
+
+function labelsAgree(d, keys, columns) {
+  const cols = columns || keys.map((k) => ({ kind: "prompt", key: k }));
+  const labels = cols.map((c) => predEn(runForColumn(d, c))).filter(Boolean);
   if (labels.length < 2) return true;
   return labels.every((l) => l === labels[0]);
 }
 
-function accuracyForPrompts(keys) {
+function accuracyForColumns(cols) {
   const st = PAYLOAD.stats || {};
-  const acc = st.per_prompt_accuracy || {};
-  return keys
-    .filter((k) => acc[k] != null)
-    .map((k) => `${promptTitle(k)} ${pct(acc[k])}`);
+  const pAcc = st.per_prompt_accuracy || {};
+  const mAcc = st.per_model_accuracy || {};
+  return cols
+    .map((col) => {
+      if (col.kind === "model") {
+        const v = mAcc[col.key];
+        return v != null ? `${modelTitle(col.key)} ${pct(v)}` : null;
+      }
+      const v = pAcc[col.key];
+      return v != null ? `${promptTitle(col.key)} ${pct(v)}` : null;
+    })
+    .filter(Boolean);
 }
 
-function confGap(d, keys) {
-  const vals = keys
-    .map((k) => runOf(d, k)?.confidence)
+function confGap(d, keys, columns) {
+  const cols = columns || keys.map((k) => ({ kind: "prompt", key: k }));
+  const vals = cols
+    .map((c) => runForColumn(d, c)?.confidence)
     .filter((v) => v != null && !Number.isNaN(v));
   if (vals.length < 2) return 0;
   return Math.max(...vals) - Math.min(...vals);
@@ -252,23 +295,24 @@ function filterData() {
   const vsGt = $("f-vs-gt")?.value || "all";
   const search = ($("f-search")?.value || "").trim().toLowerCase();
   const sort = $("f-sort")?.value || "name";
-  const prompts = activePrompts();
+  const columns = activeColumns();
+  const colKeys = columns.map((c) => c.key);
 
   let rows = PAYLOAD.records.filter((d) => {
-    if (disagreeOnly && labelsAgree(d, prompts)) return false;
+    if (disagreeOnly && labelsAgree(d, colKeys, columns)) return false;
     if (gt.length && !gt.includes(gtEn(d) || "(none)")) return false;
     if (gtCoarseSel.length && !gtCoarseSel.includes(gtCoarse(d) || "(none)")) return false;
     if (search && !d.id.toLowerCase().includes(search)) return false;
     if (pred.length) {
-      const labels = prompts.map((k) => predEn(runOf(d, k))).filter(Boolean);
+      const labels = columns.map((c) => predEn(runForColumn(d, c))).filter(Boolean);
       if (!labels.some((l) => pred.includes(l))) return false;
     }
     if (predCoarseSel.length) {
-      const coarses = prompts.map((k) => predCoarse(runOf(d, k))).filter(Boolean);
+      const coarses = columns.map((c) => predCoarse(runForColumn(d, c))).filter(Boolean);
       if (!coarses.some((c) => predCoarseSel.includes(c))) return false;
     }
     if (vsGt !== "all" && d.ground_truth) {
-      const scored = prompts.map((k) => runOf(d, k)).filter(Boolean);
+      const scored = columns.map((c) => runForColumn(d, c)).filter(Boolean);
       if (!scored.length) return false;
       const nCorrect = scored.filter((r) => r.correct).length;
       if (vsGt === "any-correct" && nCorrect === 0) return false;
@@ -286,10 +330,10 @@ function filterData() {
           || (gtEn(a) || "").localeCompare(gtEn(b) || "", "en")
           || a.id.localeCompare(b.id);
       case "conf-gap":
-        return confGap(b, prompts) - confGap(a, prompts) || a.id.localeCompare(b.id);
+        return confGap(b, colKeys, columns) - confGap(a, colKeys, columns) || a.id.localeCompare(b.id);
       case "disagree": {
-        const aAg = labelsAgree(a, prompts);
-        const bAg = labelsAgree(b, prompts);
+        const aAg = labelsAgree(a, colKeys, columns);
+        const bAg = labelsAgree(b, colKeys, columns);
         if (aAg !== bAg) return aAg ? 1 : -1;
         return a.id.localeCompare(b.id);
       }
@@ -320,12 +364,15 @@ function inputModeBadge(run) {
   return `<span class="tag tag-input">${esc(mode)}</span>`;
 }
 
-function predCell(d, key, texts) {
-  const title = promptTitle(key);
-  const run = runOf(d, key);
+function predCell(d, col, texts) {
+  const title = columnTitle(col);
+  const run = runForColumn(d, col);
+  const tkey = textKeyForColumn(col);
   if (!run) {
-    return `<div class="pred missing"><div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(title)}</div>
-      <div class="pred-label">absent</div></div>`;
+    const head = col.kind === "prompt"
+      ? `<div class="pred-key prompt-link" data-prompt="${esc(col.key)}">${esc(title)}</div>`
+      : `<div class="pred-key">${esc(title)}</div>`;
+    return `<div class="pred missing">${head}<div class="pred-label">absent</div></div>`;
   }
   const cls = d.ground_truth
     ? (run.correct ? "correct" : "incorrect")
@@ -334,18 +381,22 @@ function predCell(d, key, texts) {
   const coarse = predCoarse(run);
   const coarseCls = run.coarse_inferred ? "pred-coarse inferred" : "pred-coarse";
   const coarseNote = run.coarse_inferred ? " (from fine)" : "";
-  const model = run.model
+  const head = col.kind === "prompt"
+    ? `<div class="pred-key prompt-link" data-prompt="${esc(col.key)}">${esc(title)}</div>`
+    : `<div class="pred-key"><span class="model-link" data-model="${esc(col.key)}">${esc(title)}</span></div>`;
+  const subModel = col.kind === "prompt" && run.model
     ? `<div class="model-link" data-model="${esc(run.model)}">${esc(run.model)}</div>`
     : "";
+  const modeBadge = col.kind === "prompt" ? inputModeBadge(run) : "";
   return `<div class="pred ${cls}">
-    <div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(title)}</div>
-    ${model}
-    ${inputModeBadge(run)}
+    ${head}
+    ${subModel}
+    ${modeBadge}
     <div class="pred-row">
       <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
       <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
     </div>
-    ${explainBlock(run, texts && texts[key])}
+    ${explainBlock(run, texts && texts[tkey])}
   </div>`;
 }
 
@@ -353,30 +404,33 @@ function render() {
   if (!PAYLOAD.records.length) return;
   const grid = $("grid");
   if (!grid) return;
-  const prompts = activePrompts();
+  const columns = activeColumns();
   const rows = filterData();
   const shown = rows.slice(0, displayLimit);
-  const nDisagree = rows.filter((d) => !labelsAgree(d, prompts)).length;
+  const colKeys = columns.map((c) => c.key);
+  const nDisagree = rows.filter((d) => !labelsAgree(d, colKeys, columns)).length;
   let extra = "";
-  if (prompts.length >= 2) {
+  if (columns.length >= 2) {
     const comparable = rows.filter(
-      (d) => prompts.filter((k) => runOf(d, k)?.label).length >= 2
+      (d) => columns.filter((c) => runForColumn(d, c)?.label).length >= 2
     );
-    const nAgree = comparable.filter((d) => labelsAgree(d, prompts)).length;
+    const nAgree = comparable.filter((d) => labelsAgree(d, colKeys, columns)).length;
     if (comparable.length) {
       extra += ` · agree ${nAgree}/${comparable.length} (${pct(nAgree / comparable.length)})`;
     }
   }
-  const accBits = accuracyForPrompts(prompts);
+  const accBits = accuracyForColumns(columns);
   if (accBits.length) extra += ` · vs GT: ${accBits.join(" · ")}`;
   const nDepth = rows.filter((d) => d.has_depth).length;
   extra += ` · ${nDepth} with depth`;
 
   const stats = $("stats");
   if (stats) {
+    const nPrompts = columns.filter((c) => c.kind === "prompt").length;
+    const nModels = columns.filter((c) => c.kind === "model").length;
     stats.textContent =
       `${rows.length} / ${PAYLOAD.records.length} images · ${nDisagree} disagreements` +
-      ` · ${prompts.length} prompt(s)` +
+      ` · ${nPrompts} prompt(s) · ${nModels} model(s)` +
       extra +
       (rows.length > displayLimit ? ` · ${shown.length} shown` : "");
   }
@@ -384,7 +438,7 @@ function render() {
   grid.replaceChildren();
 
   for (const d of shown) {
-    const agree = labelsAgree(d, prompts);
+    const agree = labelsAgree(d, colKeys, columns);
     const card = document.createElement("div");
     card.className = "card " + (agree ? "agree" : "disagree");
     card.dataset.id = d.id;
@@ -395,8 +449,8 @@ function render() {
       ? `<span class="tag tag-depth">depth</span>`
       : "";
     const texts = TEXTS[d.id] || {};
-    const cells = [gtCell(d), ...prompts.map((k) => predCell(d, k, texts))].join("");
-    const nCols = prompts.length + 1;
+    const cells = [gtCell(d), ...columns.map((c) => predCell(d, c, texts))].join("");
+    const nCols = columns.length + 1;
     const colStyle = `grid-template-columns: repeat(${nCols}, minmax(0, 1fr))`;
     card.innerHTML = `
       ${buildVisualBlock(d)}
@@ -429,41 +483,21 @@ function render() {
 function openLightbox(id) {
   const d = PAYLOAD.records.find((x) => x.id === id);
   if (!d) return;
-  const prompts = activePrompts();
+  const columns = activeColumns();
+  const colKeys = columns.map((c) => c.key);
   const texts = TEXTS[id] || {};
   const lbVisual = $("lb-visual");
   if (!lbVisual) return;
   lbVisual.innerHTML = buildVisualBlock(d);
   colorizeDepthImages(lbVisual);
 
-  const agree = labelsAgree(d, prompts);
+  const agree = labelsAgree(d, colKeys, columns);
   const flag = agree
     ? `<span class="tag tag-agree">agree</span>`
     : `<span class="tag tag-disagree">disagree</span>`;
-  const nCols = prompts.length + 1;
+  const nCols = columns.length + 1;
   const colStyle = `grid-template-columns: repeat(${nCols}, minmax(0, 1fr))`;
-  const predCells = prompts.map((key) => {
-    const run = runOf(d, key);
-    const t = texts[key] || {};
-    if (!run) {
-      return `<div class="pred missing"><div class="pred-key">${esc(promptTitle(key))}</div><div>absent</div></div>`;
-    }
-    const cls = d.ground_truth ? (run.correct ? "correct" : "incorrect") : "";
-    const fine = predEn(run) || run.label || "—";
-    const coarse = predCoarse(run);
-    const coarseCls = run.coarse_inferred ? "pred-coarse inferred" : "pred-coarse";
-    const coarseNote = run.coarse_inferred ? " (from fine)" : "";
-    return `<div class="pred ${cls}">
-      <div class="pred-key prompt-link" data-prompt="${esc(key)}">${esc(promptTitle(key))}</div>
-      ${run.model ? `<div class="model-link" data-model="${esc(run.model)}">${esc(run.model)}</div>` : ""}
-      ${inputModeBadge(run)}
-      <div class="pred-row">
-        <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
-        <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
-      </div>
-      ${explainBlock(run, t)}
-    </div>`;
-  }).join("");
+  const predCells = columns.map((col) => predCell(d, col, texts)).join("");
 
   document.getElementById("lb-meta").innerHTML = `
     <div>${flag}</div>
@@ -525,7 +559,10 @@ function renderPromptSummary() {
   const el = document.getElementById("prompt-summary");
   if (!el) return;
   const parts = PAYLOAD.prompts.map((k) => `<code>${esc(promptTitle(k))}</code>`);
-  el.innerHTML = `${parts.join(" · ")} — ${PAYLOAD.records.length} images.`;
+  const models = (PAYLOAD.models || []).map((k) => `<code>${esc(modelTitle(k))}</code>`);
+  let html = `${parts.join(" · ")} — ${PAYLOAD.records.length} images.`;
+  if (models.length) html += ` Models: ${models.join(" · ")}.`;
+  el.innerHTML = html;
 }
 
 function renderPromptChips() {
@@ -548,13 +585,15 @@ function renderModelChips() {
   if (!el) return;
   el.replaceChildren();
   const catalog = PAYLOAD.model_catalog || {};
-  const names = Object.keys(catalog).sort();
+  const names = (PAYLOAD.models && PAYLOAD.models.length)
+    ? PAYLOAD.models
+    : Object.keys(catalog).sort();
   for (const name of names) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "prompt-chip";
-    btn.textContent = name;
-    btn.title = "Click to view model parameters";
+    btn.textContent = modelTitle(name);
+    btn.title = name;
     btn.addEventListener("click", () => openModelModal(name));
     el.appendChild(btn);
   }
@@ -596,6 +635,7 @@ function bindChipPair(allId, noneId, groupId) {
 
 function bindUi() {
   bindChipPair("btn-prompts-all", "btn-prompts-none", "chips-prompts");
+  bindChipPair("btn-models-all", "btn-models-none", "chips-models");
   bindChipPair("btn-input-mode-all", "btn-input-mode-none", "chips-input-mode");
   bindChipPair("btn-gt-all", "btn-gt-none", "chips-gt");
   bindChipPair("btn-gt-coarse-all", "btn-gt-coarse-none", "chips-gt-coarse");
@@ -673,6 +713,10 @@ async function init() {
       PAYLOAD.prompts.map((k) => [k, promptTitle(k)])
     );
     fillChipGroup("chips-prompts", PAYLOAD.prompts, { checked: true, labels: promptLabels });
+    const modelLabels = Object.fromEntries(
+      (PAYLOAD.models || []).map((k) => [k, modelTitle(k)])
+    );
+    fillChipGroup("chips-models", PAYLOAD.models || [], { checked: true, labels: modelLabels });
     const inputModes = PAYLOAD.input_modes && PAYLOAD.input_modes.length
       ? PAYLOAD.input_modes
       : uniq(
@@ -688,6 +732,13 @@ async function init() {
     for (const d of PAYLOAD.records) {
       for (const k of PAYLOAD.prompts) {
         const run = runOf(d, k);
+        const lab = predEn(run);
+        if (lab) predLabels.push(lab);
+        const c = predCoarse(run);
+        if (c) predCoarses.push(c);
+      }
+      for (const k of PAYLOAD.models || []) {
+        const run = modelRunOf(d, k);
         const lab = predEn(run);
         if (lab) predLabels.push(lab);
         const c = predCoarse(run);
