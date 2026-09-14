@@ -45,12 +45,6 @@ function selectedModels() {
   return checkedValues("chips-models");
 }
 
-function modelSelected(modelId) {
-  const sel = selectedModels();
-  if (!sel.length) return true;
-  return sel.includes(modelId || "");
-}
-
 function promptModelId(key) {
   for (const d of PAYLOAD.records || []) {
     const run = runOf(d, key);
