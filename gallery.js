@@ -276,10 +276,6 @@ function buildVisualBlock(d) {
 
 function filterData() {
   const disagreeOnly = $("f-disagree")?.checked;
-  const gt = checkedValues("chips-gt");
-  const gtCoarseSel = checkedValues("chips-gt-coarse");
-  const pred = checkedValues("chips-pred");
-  const predCoarseSel = checkedValues("chips-pred-coarse");
   const vsGt = $("f-vs-gt")?.value || "all";
   const search = ($("f-search")?.value || "").trim().toLowerCase();
   const sort = $("f-sort")?.value || "name";
@@ -288,17 +284,7 @@ function filterData() {
 
   let rows = PAYLOAD.records.filter((d) => {
     if (disagreeOnly && labelsAgree(d, colKeys, columns)) return false;
-    if (gt.length && !gt.includes(gtEn(d) || "(none)")) return false;
-    if (gtCoarseSel.length && !gtCoarseSel.includes(gtCoarse(d) || "(none)")) return false;
     if (search && !d.id.toLowerCase().includes(search)) return false;
-    if (pred.length) {
-      const labels = columns.map((c) => predEn(runForColumn(d, c))).filter(Boolean);
-      if (!labels.some((l) => pred.includes(l))) return false;
-    }
-    if (predCoarseSel.length) {
-      const coarses = columns.map((c) => predCoarse(runForColumn(d, c))).filter(Boolean);
-      if (!coarses.some((c) => predCoarseSel.includes(c))) return false;
-    }
     if (vsGt !== "all" && d.ground_truth) {
       const scored = columns.map((c) => runForColumn(d, c)).filter(Boolean);
       if (!scored.length) return false;
@@ -619,10 +605,6 @@ function bindUi() {
   bindChipPair("btn-prompts-all", "btn-prompts-none", "chips-prompts");
   bindChipPair("btn-models-all", "btn-models-none", "chips-models");
   bindChipPair("btn-input-mode-all", "btn-input-mode-none", "chips-input-mode");
-  bindChipPair("btn-gt-all", "btn-gt-none", "chips-gt");
-  bindChipPair("btn-gt-coarse-all", "btn-gt-coarse-none", "chips-gt-coarse");
-  bindChipPair("btn-pred-all", "btn-pred-none", "chips-pred");
-  bindChipPair("btn-pred-coarse-all", "btn-pred-coarse-none", "chips-pred-coarse");
   onClick("load-more", () => {
     displayLimit += DISPLAY_STEP;
     render();
@@ -708,21 +690,6 @@ async function init() {
           )
         );
     fillChipGroup("chips-input-mode", inputModes, { checked: true });
-    fillChipGroup("chips-gt-coarse", uniqCoarse(PAYLOAD.records.map((d) => gtCoarse(d) || "(none)")));
-    fillChipGroup("chips-gt", uniq(PAYLOAD.records.map((d) => gtEn(d) || "(none)")));
-    const predLabels = [];
-    const predCoarses = [];
-    for (const d of PAYLOAD.records) {
-      for (const k of PAYLOAD.prompts) {
-        const run = runOf(d, k);
-        const lab = predEn(run);
-        if (lab) predLabels.push(lab);
-        const c = predCoarse(run);
-        if (c) predCoarses.push(c);
-      }
-    }
-    fillChipGroup("chips-pred-coarse", uniqCoarse(predCoarses));
-    fillChipGroup("chips-pred", uniq(predLabels));
 
     renderPromptSummary();
     renderPromptChips();
