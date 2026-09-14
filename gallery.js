@@ -41,10 +41,29 @@ function modelTitle(key) {
   return display[key] || (catalog[key] && catalog[key].title) || key;
 }
 
+function selectedModels() {
+  return checkedValues("chips-models");
+}
+
 function modelSelected(modelId) {
-  const sel = checkedValues("chips-models");
+  const sel = selectedModels();
   if (!sel.length) return true;
   return sel.includes(modelId || "");
+}
+
+function promptModelId(key) {
+  for (const d of PAYLOAD.records || []) {
+    const run = runOf(d, key);
+    if (run?.model) return run.model;
+  }
+  return "";
+}
+
+function promptMatchesModelFilter(key) {
+  const sel = selectedModels();
+  if (!sel.length) return true;
+  const mid = promptModelId(key);
+  return mid ? sel.includes(mid) : false;
 }
 
 function toEn(label) {
@@ -168,7 +187,9 @@ function activePrompts() {
 }
 
 function activeColumns() {
-  return activePrompts().map((k) => ({ kind: "prompt", key: k }));
+  return activePrompts()
+    .filter((k) => promptMatchesModelFilter(k))
+    .map((k) => ({ kind: "prompt", key: k }));
 }
 
 function runForColumn(d, col) {
