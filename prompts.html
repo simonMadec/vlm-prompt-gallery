@@ -30,7 +30,7 @@
     <p style="color:#8b949e">Texte exact envoyé au modèle pour chaque variante.</p>
     <p class="nav"><a href="gallery.html">← Retour à la galerie</a></p>
     <ul class="toc">
-      <li><a href="#hierarchical"><code>hierarchical</code></a> — hierarchical</li><li><a href="#gemma_hierarchical"><code>gemma_hierarchical</code></a> — hierarchical</li><li><a href="#qwen_hierarchical"><code>qwen_hierarchical</code></a> — hierarchical</li><li><a href="#haiku_depth"><code>haiku_depth</code></a> — Haiku + depth</li><li><a href="#gemma_haiku_depth"><code>gemma_haiku_depth</code></a> — Haiku + depth</li><li><a href="#qwen_haiku_depth"><code>qwen_haiku_depth</code></a> — Haiku + depth</li><li><a href="#hierarchical_en_no_comment"><code>hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li><li><a href="#gemma_hierarchical_en_no_comment"><code>gemma_hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li><li><a href="#qwen_hierarchical_en_no_comment"><code>qwen_hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li><li><a href="#gemma_legacy"><code>gemma_legacy</code></a> — legacy taxonomy</li>
+      <li><a href="#hierarchical"><code>hierarchical</code></a> — hierarchical</li><li><a href="#gemma_hierarchical"><code>gemma_hierarchical</code></a> — hierarchical</li><li><a href="#qwen_hierarchical"><code>qwen_hierarchical</code></a> — hierarchical</li><li><a href="#haiku_depth"><code>haiku_depth</code></a> — hierarchical + depth</li><li><a href="#gemma_haiku_depth"><code>gemma_haiku_depth</code></a> — hierarchical + depth</li><li><a href="#qwen_haiku_depth"><code>qwen_haiku_depth</code></a> — hierarchical + depth</li><li><a href="#hierarchical_en_no_comment"><code>hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li><li><a href="#gemma_hierarchical_en_no_comment"><code>gemma_hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li><li><a href="#qwen_hierarchical_en_no_comment"><code>qwen_hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li><li><a href="#gemma_legacy"><code>gemma_legacy</code></a> — legacy taxonomy</li>
     </ul>
   </header>
 <section class="prompt-block" id="hierarchical">
@@ -268,7 +268,7 @@ JSON only (no markdown):
 {&quot;level1&quot;:&quot;&lt;coarse&gt;&quot;,&quot;level1_confidence&quot;:&lt;0-1&gt;,&quot;class_name_en&quot;:&quot;&lt;exact fine label&gt;&quot;,&quot;confidence&quot;:&lt;0-1&gt;,&quot;cues&quot;:[&quot;&lt;cue&gt;&quot;],&quot;reasoning&quot;:&quot;&lt;1-2 sentences&gt;&quot;,&quot;usable_for_satellite_gt&quot;:&lt;true|false&gt;,&quot;reject_reason&quot;:null|&quot;unusable_image&quot;|&quot;ground_not_visible&quot;|&quot;mixed_plots&quot;|&quot;unknown_land_use&quot;}
 </pre>
 </section><section class="prompt-block" id="haiku_depth">
-  <h2><code>haiku_depth</code> — Haiku + depth</h2>
+  <h2><code>haiku_depth</code> — hierarchical + depth</h2>
   <p class="meta">6948 caractères · source: landcover_prompts.py</p>
   <pre>You are classifying ground-level street-view photos from rural Benin (Parakou landscapes).
 
@@ -362,7 +362,7 @@ Use depth as a geometric cue, not as a second scene:
 Do not ignore a clearly identifiable annual crop on the ground just because
 trees appear in the RGB image.</pre>
 </section><section class="prompt-block" id="gemma_haiku_depth">
-  <h2><code>gemma_haiku_depth</code> — Haiku + depth</h2>
+  <h2><code>gemma_haiku_depth</code> — hierarchical + depth</h2>
   <p class="meta">6948 caractères · source: landcover_prompts.py</p>
   <pre>You are classifying ground-level street-view photos from rural Benin (Parakou landscapes).
 
@@ -456,7 +456,7 @@ Use depth as a geometric cue, not as a second scene:
 Do not ignore a clearly identifiable annual crop on the ground just because
 trees appear in the RGB image.</pre>
 </section><section class="prompt-block" id="qwen_haiku_depth">
-  <h2><code>qwen_haiku_depth</code> — Haiku + depth</h2>
+  <h2><code>qwen_haiku_depth</code> — hierarchical + depth</h2>
   <p class="meta">6948 caractères · source: landcover_prompts.py</p>
   <pre>You are classifying ground-level street-view photos from rural Benin (Parakou landscapes).
 

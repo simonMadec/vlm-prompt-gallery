@@ -41,6 +41,11 @@ function modelTitle(key) {
   return display[key] || (catalog[key] && catalog[key].title) || key;
 }
 
+function canonicalModel(id) {
+  const aliases = PAYLOAD.model_aliases || {};
+  return aliases[id] || id || "";
+}
+
 function selectedModels() {
   return checkedValues("chips-models");
 }
@@ -53,11 +58,28 @@ function promptModelId(key) {
   return "";
 }
 
+function promptSourceKey(key) {
+  const catalog = PAYLOAD.prompt_catalog || {};
+  return (catalog[key] && catalog[key].prompt_key) || key;
+}
+
 function promptMatchesModelFilter(key) {
   const sel = selectedModels();
   if (!sel.length) return true;
-  const mid = promptModelId(key);
+  const mid = canonicalModel(promptModelId(key));
   return mid ? sel.includes(mid) : false;
+}
+
+function uniqueIds(ids, canonicalize) {
+  const seen = new Set();
+  const out = [];
+  for (const id of ids) {
+    const c = canonicalize(id);
+    if (!c || seen.has(c)) continue;
+    seen.add(c);
+    out.push(c);
+  }
+  return out;
 }
 
 function toEn(label) {
@@ -174,7 +196,8 @@ function activePrompts() {
   const sel = checkedValues("chips-prompts");
   const modes = selectedInputModes();
   return PAYLOAD.prompts.filter((k) => {
-    if (!sel.includes(k)) return false;
+    const src = promptSourceKey(k);
+    if (!sel.includes(k) && !sel.includes(src)) return false;
     if (!modes.includes(inputModeForPrompt(k))) return false;
     if (!promptMatchesModelFilter(k)) return false;
     return true;
@@ -675,11 +698,15 @@ async function init() {
       throw new Error("aucune image dans les données");
     }
 
+    const promptChipIds = uniqueIds(PAYLOAD.prompts, promptSourceKey);
     const promptLabels = Object.fromEntries(
-      PAYLOAD.prompts.map((k) => [k, promptTitle(k)])
+      promptChipIds.map((k) => [k, promptTitle(k)])
     );
-    fillChipGroup("chips-prompts", PAYLOAD.prompts, { checked: true, labels: promptLabels });
-    const modelIds = Object.keys(PAYLOAD.model_catalog || {}).sort();
+    fillChipGroup("chips-prompts", promptChipIds, { checked: true, labels: promptLabels });
+    const modelIds = uniqueIds(
+      Object.keys(PAYLOAD.model_catalog || {}),
+      canonicalModel
+    );
     const modelLabels = Object.fromEntries(
       modelIds.map((k) => [k, modelTitle(k)])
     );
