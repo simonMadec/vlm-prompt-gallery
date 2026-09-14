@@ -35,14 +35,16 @@ function runOf(d, key) {
   return (d.runs && d.runs[key]) || null;
 }
 
-function modelRunOf(d, key) {
-  return (d.model_runs && d.model_runs[key]) || null;
+function modelTitle(key) {
+  const display = PAYLOAD.model_display_names || {};
+  const catalog = PAYLOAD.model_catalog || {};
+  return display[key] || (catalog[key] && catalog[key].title) || key;
 }
 
-function modelTitle(key) {
-  const titles = PAYLOAD.model_titles || {};
-  const catalog = PAYLOAD.model_catalog || {};
-  return titles[key] || (catalog[key] && catalog[key].title) || key;
+function modelSelected(modelId) {
+  const sel = checkedValues("chips-models");
+  if (!sel.length) return true;
+  return sel.includes(modelId || "");
 }
 
 function toEn(label) {
@@ -165,27 +167,18 @@ function activePrompts() {
   });
 }
 
-function activeModels() {
-  const sel = checkedValues("chips-models");
-  return (PAYLOAD.models || []).filter((k) => sel.includes(k));
-}
-
 function activeColumns() {
-  const prompts = activePrompts().map((k) => ({ kind: "prompt", key: k }));
-  const models = activeModels().map((k) => ({ kind: "model", key: k }));
-  return [...prompts, ...models];
+  return activePrompts().map((k) => ({ kind: "prompt", key: k }));
 }
 
 function runForColumn(d, col) {
-  return col.kind === "model" ? modelRunOf(d, col.key) : runOf(d, col.key);
-}
-
-function textKeyForColumn(col) {
-  return col.key;
+  const run = runOf(d, col.key);
+  if (!run || !modelSelected(run.model)) return null;
+  return run;
 }
 
 function columnTitle(col) {
-  return col.kind === "model" ? modelTitle(col.key) : promptTitle(col.key);
+  return promptTitle(col.key);
 }
 
 function labelsAgree(d, keys, columns) {
@@ -198,13 +191,8 @@ function labelsAgree(d, keys, columns) {
 function accuracyForColumns(cols) {
   const st = PAYLOAD.stats || {};
   const pAcc = st.per_prompt_accuracy || {};
-  const mAcc = st.per_model_accuracy || {};
   return cols
     .map((col) => {
-      if (col.kind === "model") {
-        const v = mAcc[col.key];
-        return v != null ? `${modelTitle(col.key)} ${pct(v)}` : null;
-      }
       const v = pAcc[col.key];
       return v != null ? `${promptTitle(col.key)} ${pct(v)}` : null;
     })
@@ -366,13 +354,14 @@ function inputModeBadge(run) {
 
 function predCell(d, col, texts) {
   const title = columnTitle(col);
+  const rawRun = runOf(d, col.key);
   const run = runForColumn(d, col);
-  const tkey = textKeyForColumn(col);
-  if (!run) {
-    const head = col.kind === "prompt"
-      ? `<div class="pred-key prompt-link" data-prompt="${esc(col.key)}">${esc(title)}</div>`
-      : `<div class="pred-key">${esc(title)}</div>`;
+  const head = `<div class="pred-key prompt-link" data-prompt="${esc(col.key)}">${esc(title)}</div>`;
+  if (!rawRun) {
     return `<div class="pred missing">${head}<div class="pred-label">absent</div></div>`;
+  }
+  if (!run) {
+    return `<div class="pred missing">${head}<div class="pred-label">filtered</div></div>`;
   }
   const cls = d.ground_truth
     ? (run.correct ? "correct" : "incorrect")
@@ -381,22 +370,18 @@ function predCell(d, col, texts) {
   const coarse = predCoarse(run);
   const coarseCls = run.coarse_inferred ? "pred-coarse inferred" : "pred-coarse";
   const coarseNote = run.coarse_inferred ? " (from fine)" : "";
-  const head = col.kind === "prompt"
-    ? `<div class="pred-key prompt-link" data-prompt="${esc(col.key)}">${esc(title)}</div>`
-    : `<div class="pred-key"><span class="model-link" data-model="${esc(col.key)}">${esc(title)}</span></div>`;
-  const subModel = col.kind === "prompt" && run.model
-    ? `<div class="model-link" data-model="${esc(run.model)}">${esc(run.model)}</div>`
+  const subModel = run.model
+    ? `<div class="model-link" data-model="${esc(run.model)}">${esc(modelTitle(run.model))}</div>`
     : "";
-  const modeBadge = col.kind === "prompt" ? inputModeBadge(run) : "";
   return `<div class="pred ${cls}">
     ${head}
     ${subModel}
-    ${modeBadge}
+    ${inputModeBadge(run)}
     <div class="pred-row">
       <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
       <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
     </div>
-    ${explainBlock(run, texts && texts[tkey])}
+    ${explainBlock(run, texts && texts[col.key])}
   </div>`;
 }
 
@@ -426,11 +411,9 @@ function render() {
 
   const stats = $("stats");
   if (stats) {
-    const nPrompts = columns.filter((c) => c.kind === "prompt").length;
-    const nModels = columns.filter((c) => c.kind === "model").length;
     stats.textContent =
       `${rows.length} / ${PAYLOAD.records.length} images · ${nDisagree} disagreements` +
-      ` · ${nPrompts} prompt(s) · ${nModels} model(s)` +
+      ` · ${columns.length} prompt(s)` +
       extra +
       (rows.length > displayLimit ? ` · ${shown.length} shown` : "");
   }
@@ -559,7 +542,8 @@ function renderPromptSummary() {
   const el = document.getElementById("prompt-summary");
   if (!el) return;
   const parts = PAYLOAD.prompts.map((k) => `<code>${esc(promptTitle(k))}</code>`);
-  const models = (PAYLOAD.models || []).map((k) => `<code>${esc(modelTitle(k))}</code>`);
+  const catalog = PAYLOAD.model_catalog || {};
+  const models = Object.keys(catalog).map((k) => `<code>${esc(modelTitle(k))}</code>`);
   let html = `${parts.join(" · ")} — ${PAYLOAD.records.length} images.`;
   if (models.length) html += ` Models: ${models.join(" · ")}.`;
   el.innerHTML = html;
@@ -585,9 +569,7 @@ function renderModelChips() {
   if (!el) return;
   el.replaceChildren();
   const catalog = PAYLOAD.model_catalog || {};
-  const names = (PAYLOAD.models && PAYLOAD.models.length)
-    ? PAYLOAD.models
-    : Object.keys(catalog).sort();
+  const names = Object.keys(catalog).sort();
   for (const name of names) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -713,10 +695,11 @@ async function init() {
       PAYLOAD.prompts.map((k) => [k, promptTitle(k)])
     );
     fillChipGroup("chips-prompts", PAYLOAD.prompts, { checked: true, labels: promptLabels });
+    const modelIds = Object.keys(PAYLOAD.model_catalog || {}).sort();
     const modelLabels = Object.fromEntries(
-      (PAYLOAD.models || []).map((k) => [k, modelTitle(k)])
+      modelIds.map((k) => [k, modelTitle(k)])
     );
-    fillChipGroup("chips-models", PAYLOAD.models || [], { checked: true, labels: modelLabels });
+    fillChipGroup("chips-models", modelIds, { checked: true, labels: modelLabels });
     const inputModes = PAYLOAD.input_modes && PAYLOAD.input_modes.length
       ? PAYLOAD.input_modes
       : uniq(
@@ -732,13 +715,6 @@ async function init() {
     for (const d of PAYLOAD.records) {
       for (const k of PAYLOAD.prompts) {
         const run = runOf(d, k);
-        const lab = predEn(run);
-        if (lab) predLabels.push(lab);
-        const c = predCoarse(run);
-        if (c) predCoarses.push(c);
-      }
-      for (const k of PAYLOAD.models || []) {
-        const run = modelRunOf(d, k);
         const lab = predEn(run);
         if (lab) predLabels.push(lab);
         const c = predCoarse(run);
