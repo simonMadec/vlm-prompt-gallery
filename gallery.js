@@ -182,20 +182,17 @@ function activePrompts() {
   return PAYLOAD.prompts.filter((k) => {
     if (!sel.includes(k)) return false;
     if (!modes.includes(inputModeForPrompt(k))) return false;
+    if (!promptMatchesModelFilter(k)) return false;
     return true;
   });
 }
 
 function activeColumns() {
-  return activePrompts()
-    .filter((k) => promptMatchesModelFilter(k))
-    .map((k) => ({ kind: "prompt", key: k }));
+  return activePrompts().map((k) => ({ kind: "prompt", key: k }));
 }
 
 function runForColumn(d, col) {
-  const run = runOf(d, col.key);
-  if (!run || !modelSelected(run.model)) return null;
-  return run;
+  return runOf(d, col.key);
 }
 
 function columnTitle(col) {
@@ -361,14 +358,10 @@ function inputModeBadge(run) {
 
 function predCell(d, col, texts) {
   const title = columnTitle(col);
-  const rawRun = runOf(d, col.key);
   const run = runForColumn(d, col);
   const head = `<div class="pred-key prompt-link" data-prompt="${esc(col.key)}">${esc(title)}</div>`;
-  if (!rawRun) {
-    return `<div class="pred missing">${head}<div class="pred-label">absent</div></div>`;
-  }
   if (!run) {
-    return `<div class="pred missing">${head}<div class="pred-label">filtered</div></div>`;
+    return `<div class="pred missing">${head}<div class="pred-label">absent</div></div>`;
   }
   const cls = d.ground_truth
     ? (run.correct ? "correct" : "incorrect")
