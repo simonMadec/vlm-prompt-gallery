@@ -528,7 +528,12 @@ function renderPromptChips() {
   const el = $("prompt-chips");
   if (!el) return;
   el.replaceChildren();
+  const seen = new Set();
   for (const key of PAYLOAD.prompts) {
+    const meta = (PAYLOAD.prompt_catalog || {})[key] || {};
+    const id = meta.prompt_key || key;
+    if (seen.has(id)) continue;
+    seen.add(id);
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "prompt-chip";
