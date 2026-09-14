@@ -524,17 +524,6 @@ function closePromptModal() {
   document.getElementById("prompt-modal").classList.remove("open");
 }
 
-function renderPromptSummary() {
-  const el = document.getElementById("prompt-summary");
-  if (!el) return;
-  const parts = PAYLOAD.prompts.map((k) => `<code>${esc(promptTitle(k))}</code>`);
-  const catalog = PAYLOAD.model_catalog || {};
-  const models = Object.keys(catalog).map((k) => `<code>${esc(modelTitle(k))}</code>`);
-  let html = `${parts.join(" · ")} — ${PAYLOAD.records.length} images.`;
-  if (models.length) html += ` Models: ${models.join(" · ")}.`;
-  el.innerHTML = html;
-}
-
 function renderPromptChips() {
   const el = $("prompt-chips");
   if (!el) return;
@@ -691,7 +680,6 @@ async function init() {
         );
     fillChipGroup("chips-input-mode", inputModes, { checked: true });
 
-    renderPromptSummary();
     renderPromptChips();
     renderModelChips();
     bindUi();
