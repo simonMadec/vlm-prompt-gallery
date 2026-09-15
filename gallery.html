@@ -170,7 +170,11 @@
           <option value="gt">Ground truth</option>
           <option value="conf-gap">Confidence gap ↓</option>
         </select></div>
-      <div><label for="f-search">Search</label><input type="text" id="f-search" placeholder="image id…"></div>
+      <div><label for="f-gt-crop">GT crop</label>
+        <select id="f-gt-crop">
+          <option value="">All crops</option>
+        </select></div>
+      <div><label for="f-search">Search</label><input type="text" id="f-search" placeholder="image id or crop…"></div>
     </div>
     <div class="filter-group">
       <div class="group-head">
@@ -229,6 +233,6 @@
     <button class="close" id="prompt-modal-close">×</button>
     <div id="prompt-modal-inner"></div>
   </div>
-  <script src="gallery.js?v=c95c6bfe29" defer></script>
+  <script src="gallery.js?v=3988e62e6e" defer></script>
 </body>
 </html>

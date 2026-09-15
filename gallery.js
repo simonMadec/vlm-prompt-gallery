@@ -114,6 +114,88 @@ function gtCoarse(d) {
   return d.ground_truth_coarse || "";
 }
 
+function gtFr(d) {
+  const raw = (d.ground_truth_display || d.ground_truth || "").trim();
+  const fine = gtEn(d);
+  return raw && fine && raw !== fine ? raw : "";
+}
+
+function recordMatchesGtCrop(d, sel) {
+  if (!sel) return true;
+  const fine = gtEn(d);
+  const coarse = gtCoarse(d);
+  const raw = (d.ground_truth_display || d.ground_truth || "").trim();
+  if (sel.startsWith("fine:")) {
+    const want = sel.slice(5);
+    return fine === want || raw === want;
+  }
+  if (sel.startsWith("coarse:")) {
+    return coarse === sel.slice(7);
+  }
+  const q = sel.toLowerCase();
+  return [fine, coarse, raw].filter(Boolean).some((v) => v.toLowerCase().includes(q));
+}
+
+function fillGtCropSelect() {
+  const el = $("f-gt-crop");
+  if (!el) return;
+  const fines = new Set();
+  const coarses = new Set();
+  const frByFine = new Map();
+  for (const d of PAYLOAD.records || []) {
+    const fine = gtEn(d);
+    const coarse = gtCoarse(d);
+    if (fine) {
+      fines.add(fine);
+      const fr = gtFr(d);
+      if (fr && !frByFine.has(fine)) frByFine.set(fine, fr);
+    }
+    if (coarse) coarses.add(coarse);
+  }
+  const prev = el.value;
+  el.replaceChildren();
+  const all = document.createElement("option");
+  all.value = "";
+  all.textContent = "All crops";
+  el.appendChild(all);
+
+  const coarseOrder = PAYLOAD.coarse_order || [];
+  const coarseSorted = [...coarses].sort((a, b) => {
+    const ia = coarseOrder.indexOf(a);
+    const ib = coarseOrder.indexOf(b);
+    if (ia >= 0 && ib >= 0) return ia - ib;
+    if (ia >= 0) return -1;
+    if (ib >= 0) return 1;
+    return a.localeCompare(b, "en");
+  });
+  if (coarseSorted.length) {
+    const og = document.createElement("optgroup");
+    og.label = "Coarse class";
+    for (const c of coarseSorted) {
+      const opt = document.createElement("option");
+      opt.value = `coarse:${c}`;
+      opt.textContent = c.replace(/_/g, " ");
+      og.appendChild(opt);
+    }
+    el.appendChild(og);
+  }
+
+  const fineSorted = [...fines].sort((a, b) => a.localeCompare(b, "en"));
+  if (fineSorted.length) {
+    const og = document.createElement("optgroup");
+    og.label = "Fine crop / class";
+    for (const fine of fineSorted) {
+      const opt = document.createElement("option");
+      opt.value = `fine:${fine}`;
+      const fr = frByFine.get(fine);
+      opt.textContent = fr ? `${fine} (${fr})` : fine;
+      og.appendChild(opt);
+    }
+    el.appendChild(og);
+  }
+  if (prev && [...el.options].some((o) => o.value === prev)) el.value = prev;
+}
+
 function uniqCoarse(vals) {
   const set = new Set(vals.filter(Boolean));
   const order = PAYLOAD.coarse_order || [];
@@ -452,13 +534,21 @@ function filterData() {
   const disagreeOnly = $("f-disagree")?.checked;
   const vsGt = $("f-vs-gt")?.value || "all";
   const search = ($("f-search")?.value || "").trim().toLowerCase();
+  const gtCrop = $("f-gt-crop")?.value || "";
   const sort = $("f-sort")?.value || "name";
   const columns = activeColumns();
   const colKeys = columns.map((c) => c.key);
 
   let rows = PAYLOAD.records.filter((d) => {
     if (disagreeOnly && labelsAgree(d, colKeys, columns)) return false;
-    if (search && !d.id.toLowerCase().includes(search)) return false;
+    if (!recordMatchesGtCrop(d, gtCrop)) return false;
+    if (search) {
+      const idMatch = d.id.toLowerCase().includes(search);
+      const cropMatch = [gtEn(d), gtCoarse(d), gtFr(d), d.ground_truth || ""]
+        .filter(Boolean)
+        .some((v) => String(v).toLowerCase().includes(search));
+      if (!idMatch && !cropMatch) return false;
+    }
     if (vsGt !== "all" && d.ground_truth) {
       const scored = columns.map((c) => runForColumn(d, c)).filter(Boolean);
       if (!scored.length) return false;
@@ -869,7 +959,7 @@ function bindUi() {
     if (det.open) hydrateExplain(det);
   }, true);
 
-  ["f-disagree", "f-depth", "f-vs-gt", "f-sort"].forEach((id) => {
+  ["f-disagree", "f-depth", "f-vs-gt", "f-sort", "f-gt-crop"].forEach((id) => {
     const el = $(id);
     if (el) el.addEventListener("change", liveRender);
   });
@@ -980,6 +1070,7 @@ async function init() {
       });
     }
 
+    fillGtCropSelect();
     renderPromptChips();
     renderModelChips();
     bindUi();
