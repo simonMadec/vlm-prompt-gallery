@@ -686,7 +686,7 @@ function render() {
   if (stats) {
     stats.textContent =
       `${rows.length} / ${PAYLOAD.records.length} images · ${nDisagree} disagreements` +
-      ` · ${columns.length} prompt(s)` +
+      ` · ${columns.length} column(s)` +
       extra +
       (rows.length > displayLimit ? ` · ${shown.length} shown` : "");
   }
@@ -1071,6 +1071,15 @@ async function init() {
     }
 
     fillGtCropSelect();
+    const gtPreview = !PAYLOAD.prompts.length;
+    document.querySelectorAll(".filter-group").forEach((el) => {
+      if (!gtPreview) return;
+      const id = el.querySelector(".chip-list")?.id || "";
+      if (id.startsWith("chips-prompts") || id.startsWith("chips-models") || id.startsWith("chips-input-mode")) {
+        el.hidden = true;
+      }
+    });
+    if ($("filter-gemma-sweep")) $("filter-gemma-sweep").hidden = true;
     renderPromptChips();
     renderModelChips();
     bindUi();
