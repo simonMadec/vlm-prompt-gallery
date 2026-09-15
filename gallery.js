@@ -1,8 +1,10 @@
 /** Side-by-side prompt comparison gallery — live chip filters, optional depth. */
 let PAYLOAD = { prompts: [], stats: {}, records: [] };
 let TEXTS = {};
+let SWEEP_RUNS = {};
 let textsPromise = null;
-const DISPLAY_STEP = 200;
+const DISPLAY_STEP = 12;
+const DEFAULT_PROMPT_KEYS = ["hierarchical_en_no_comment"];
 let displayLimit = DISPLAY_STEP;
 
 const COLORMAPS = {
@@ -33,6 +35,10 @@ function esc(s) {
 }
 
 function runOf(d, key) {
+  if (isSweepKey(key)) {
+    const img = SWEEP_RUNS[d.id];
+    return (img && img[key]) || null;
+  }
   return (d.runs && d.runs[key]) || null;
 }
 
@@ -210,7 +216,7 @@ function selectedInputModes() {
 }
 
 function isSweepKey(key) {
-  return (PAYLOAD.sweep_keys || []).includes(key);
+  return (PAYLOAD.sweep_keys || []).includes(key) || String(key).startsWith("gemma_sweep_");
 }
 
 function firstRun(key) {
@@ -386,7 +392,7 @@ function colorizeDepthImages(root) {
 }
 
 function buildVisualBlock(d) {
-  const rgb = `<img class="vis-rgb" src="${esc(d.img)}" alt="${esc(d.id)}" loading="lazy">`;
+  const rgb = `<img class="vis-rgb" src="${esc(d.img)}" alt="${esc(d.id)}" loading="lazy" decoding="async">`;
   if (!showDepth() || !d.has_depth) {
     return `<div class="visual">${rgb}</div>`;
   }
@@ -440,19 +446,48 @@ function filterData() {
   return rows;
 }
 
-function explainBlock(run, texts) {
-  if (!run) return "";
-  const t = texts || {};
-  const cues = (run.cues || []).join(" · ");
-  const reasoning = t.reasoning || "";
-  const thinking = t.thinking || "";
-  if (!cues && !reasoning && !thinking) return "";
-  const body = [
-    cues ? `<div>${esc(cues)}</div>` : "",
+function explainBody(t) {
+  const reasoning = (t && t.reasoning) || "";
+  const thinking = (t && t.thinking) || "";
+  if (!reasoning && !thinking) return "";
+  return [
     reasoning ? `<div class="reason">${esc(reasoning)}</div>` : "",
     thinking ? `<div class="reason"><strong>thinking</strong>\n${esc(thinking)}</div>` : "",
   ].join("");
-  return `<details class="explain"><summary>explanation</summary>${body}</details>`;
+}
+
+function explainBlock(run, imageId, colKey) {
+  if (!run) return "";
+  const cues = (run.cues || []).join(" · ");
+  const t = imageId && colKey && TEXTS[imageId] ? TEXTS[imageId][colKey] : null;
+  const extra = explainBody(t);
+  if (!cues && !extra && !imageId) return "";
+  if (!imageId) {
+    if (!cues && !extra) return "";
+    return `<details class="explain"><summary>explanation</summary>${
+      cues ? `<div>${esc(cues)}</div>` : ""
+    }${extra}</details>`;
+  }
+  return `<details class="explain" data-img="${esc(imageId)}" data-col="${esc(colKey)}">
+    <summary>explanation</summary>
+    ${cues ? `<div>${esc(cues)}</div>` : ""}
+    ${extra ? extra : '<div class="reason lazy-body"></div>'}
+  </details>`;
+}
+
+async function hydrateExplain(det) {
+  if (!det || det.dataset.hydrated) return;
+  const lazy = det.querySelector(".lazy-body");
+  if (!lazy) {
+    det.dataset.hydrated = "1";
+    return;
+  }
+  await ensureTexts();
+  const t = TEXTS[det.dataset.img]?.[det.dataset.col] || {};
+  const extra = explainBody(t);
+  if (extra) lazy.outerHTML = extra;
+  else lazy.remove();
+  det.dataset.hydrated = "1";
 }
 
 function inputModeBadge(run) {
@@ -460,7 +495,7 @@ function inputModeBadge(run) {
   return `<span class="tag tag-input">${esc(mode)}</span>`;
 }
 
-function predCell(d, col, texts) {
+function predCell(d, col) {
   const title = columnTitle(col);
   const run = runForColumn(d, col);
   const head = `<div class="pred-key prompt-link" data-prompt="${esc(col.key)}">${esc(title)}</div>`;
@@ -485,7 +520,7 @@ function predCell(d, col, texts) {
       <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
       <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
     </div>
-    ${explainBlock(run, texts && texts[col.key])}
+    ${explainBlock(run, d.id, col.key)}
   </div>`;
 }
 
@@ -534,8 +569,7 @@ function render() {
     const depthBadge = d.has_depth && showDepth()
       ? `<span class="tag tag-depth">depth</span>`
       : "";
-    const texts = TEXTS[d.id] || {};
-    const cells = [gtCell(d), ...columns.map((c) => predCell(d, c, texts))].join("");
+    const cells = [gtCell(d), ...columns.map((c) => predCell(d, c))].join("");
     const nCols = columns.length + 1;
     const colStyle = `grid-template-columns: repeat(${nCols}, minmax(0, 1fr))`;
     card.innerHTML = `
@@ -572,7 +606,6 @@ async function openLightbox(id) {
   if (!d) return;
   const columns = activeColumns();
   const colKeys = columns.map((c) => c.key);
-  const texts = TEXTS[id] || {};
   const lbVisual = $("lb-visual");
   if (!lbVisual) return;
   lbVisual.innerHTML = buildVisualBlock(d);
@@ -584,7 +617,7 @@ async function openLightbox(id) {
     : `<span class="tag tag-disagree">disagree</span>`;
   const nCols = columns.length + 1;
   const colStyle = `grid-template-columns: repeat(${nCols}, minmax(0, 1fr))`;
-  const predCells = columns.map((col) => predCell(d, col, texts)).join("");
+  const predCells = columns.map((col) => predCell(d, col)).join("");
 
   document.getElementById("lb-meta").innerHTML = `
     <div>${flag}</div>
@@ -768,6 +801,12 @@ function bindUi() {
 
   bindPromptLinks();
 
+  document.addEventListener("toggle", (e) => {
+    const det = e.target;
+    if (!(det instanceof HTMLDetailsElement) || !det.classList.contains("explain")) return;
+    if (det.open) hydrateExplain(det);
+  }, true);
+
   ["f-disagree", "f-depth", "f-vs-gt", "f-sort"].forEach((id) => {
     const el = $(id);
     if (el) el.addEventListener("change", liveRender);
@@ -801,11 +840,17 @@ async function ensureTexts() {
 
 async function loadData() {
   if (window.GALLERY_DATA && Array.isArray(window.GALLERY_DATA.records)) {
-    return { payload: window.GALLERY_DATA };
+    return { payload: window.GALLERY_DATA, sweeps: window.GALLERY_SWEEPS || {} };
   }
-  const dataRes = await fetch("data.json");
+  const [dataRes, sweepRes] = await Promise.all([
+    fetch("data.json"),
+    fetch("sweeps.json"),
+  ]);
   if (!dataRes.ok) throw new Error("data.json introuvable (HTTP " + dataRes.status + ")");
-  return { payload: await dataRes.json() };
+  return {
+    payload: await dataRes.json(),
+    sweeps: sweepRes.ok ? await sweepRes.json() : {},
+  };
 }
 
 async function init() {
@@ -814,6 +859,7 @@ async function init() {
   try {
     const loaded = await loadData();
     PAYLOAD = loaded.payload;
+    SWEEP_RUNS = loaded.sweeps || {};
     if (!PAYLOAD.records || !PAYLOAD.records.length) {
       throw new Error("aucune image dans les données");
     }
@@ -822,7 +868,12 @@ async function init() {
     const promptLabels = Object.fromEntries(
       promptChipIds.map((k) => [k, promptTitle(k)])
     );
-    fillChipGroup("chips-prompts", promptChipIds, { checked: true, labels: promptLabels });
+    const defaultPrompts = DEFAULT_PROMPT_KEYS.filter((k) => promptChipIds.includes(k));
+    fillChipGroup("chips-prompts", promptChipIds, {
+      checked: false,
+      labels: promptLabels,
+      selected: defaultPrompts.length ? defaultPrompts : promptChipIds.slice(0, 1),
+    });
     const modelIds = uniqueIds(
       Object.keys(PAYLOAD.model_catalog || {}),
       canonicalModel
@@ -833,12 +884,11 @@ async function init() {
     fillChipGroup("chips-models", modelIds, { checked: true, labels: modelLabels });
     const inputModes = PAYLOAD.input_modes && PAYLOAD.input_modes.length
       ? PAYLOAD.input_modes
-      : uniq(
-          PAYLOAD.records.flatMap((d) =>
-            Object.values(d.runs || {}).map((r) => runInputMode(r))
-          )
-        );
-    fillChipGroup("chips-input-mode", inputModes, { checked: true });
+      : ["rgb"];
+    fillChipGroup("chips-input-mode", inputModes, {
+      checked: false,
+      selected: inputModes.includes("rgb") ? ["rgb"] : inputModes.slice(0, 1),
+    });
 
     const sweepKeys = PAYLOAD.sweep_keys || [];
     const sweepGroup = $("filter-gemma-sweep");
@@ -870,10 +920,8 @@ async function init() {
     renderPromptChips();
     renderModelChips();
     bindUi();
-    render();
-    ensureTexts().then(() => {
-      if (Object.keys(TEXTS).length) render();
-    });
+    requestAnimationFrame(() => render());
+    ensureTexts();
     errEl.style.display = "none";
   } catch (err) {
     const stats = $("stats");
