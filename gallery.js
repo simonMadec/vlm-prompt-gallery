@@ -1072,14 +1072,15 @@ async function init() {
 
     fillGtCropSelect();
     const gtPreview = !PAYLOAD.prompts.length;
-    document.querySelectorAll(".filter-group").forEach((el) => {
-      if (!gtPreview) return;
-      const id = el.querySelector(".chip-list")?.id || "";
-      if (id.startsWith("chips-prompts") || id.startsWith("chips-models") || id.startsWith("chips-input-mode")) {
-        el.hidden = true;
-      }
-    });
-    if ($("filter-gemma-sweep")) $("filter-gemma-sweep").hidden = true;
+    if (gtPreview) {
+      document.querySelectorAll(".filter-group").forEach((el) => {
+        const id = el.querySelector(".chip-list")?.id || "";
+        if (id.startsWith("chips-prompts") || id.startsWith("chips-models") || id.startsWith("chips-input-mode")) {
+          el.hidden = true;
+        }
+      });
+      if ($("filter-gemma-sweep")) $("filter-gemma-sweep").hidden = true;
+    }
     renderPromptChips();
     renderModelChips();
     bindUi();
