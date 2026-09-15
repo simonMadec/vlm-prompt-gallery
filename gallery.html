@@ -35,6 +35,8 @@
     .group-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; font-size: 0.75rem; color: #8b949e; }
     .group-head .hint { color: #484f58; font-weight: 400; }
     .chip-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .sweep-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem 0.65rem; margin-top: 0.35rem; }
+    .sweep-row > span { font-size: 0.72rem; color: #8b949e; min-width: 6.5rem; }
     .chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.28rem 0.65rem;
       border-radius: 999px; border: 1px solid #30363d; background: #0d1117; color: #8b949e;
       font-size: 0.78rem; cursor: pointer; user-select: none; }
@@ -194,6 +196,25 @@
       </div>
       <div id="chips-input-mode" class="chip-list"></div>
     </div>
+    <div class="filter-group" id="filter-gemma-sweep" hidden>
+      <div class="group-head">
+        <span>Gemma sweep</span>
+        <button type="button" class="btn-mini" id="btn-sweep-best">best</button>
+        <button type="button" class="btn-mini" id="btn-sweep-none">none</button>
+      </div>
+      <div class="sweep-row">
+        <span>thinking</span>
+        <div id="chips-sweep-thinking" class="chip-list"></div>
+      </div>
+      <div class="sweep-row">
+        <span>temperature</span>
+        <div id="chips-sweep-temperature" class="chip-list"></div>
+      </div>
+      <div class="sweep-row">
+        <span>resolution</span>
+        <div id="chips-sweep-soft" class="chip-list"></div>
+      </div>
+    </div>
   </div>
 
   <div id="grid"></div>
@@ -208,8 +229,8 @@
     <button class="close" id="prompt-modal-close">×</button>
     <div id="prompt-modal-inner"></div>
   </div>
-  <script src="data.js?v=a4a69da1d9"></script>
-  <script src="texts.js?v=a4a69da1d9"></script>
-  <script src="gallery.js?v=a4a69da1d9"></script>
+  <script src="data.js?v=db5227a11a"></script>
+  <script src="texts.js?v=db5227a11a"></script>
+  <script src="gallery.js?v=db5227a11a"></script>
 </body>
 </html>

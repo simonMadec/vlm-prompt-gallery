@@ -152,22 +152,30 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function fillChipGroup(containerId, values, { checked = false, labels = {} } = {}) {
+function fillChipGroup(containerId, values, { checked = false, labels = {}, selected = null } = {}) {
   const el = $(containerId);
   if (!el) return;
   el.replaceChildren();
+  const sel = selected == null ? null : new Set(selected.map(String));
   for (const v of values) {
     const lab = document.createElement("label");
     lab.className = "chip";
     const inp = document.createElement("input");
     inp.type = "checkbox";
     inp.value = v;
-    inp.checked = checked;
+    inp.checked = sel ? sel.has(String(v)) : checked;
     inp.addEventListener("change", liveRender);
     lab.appendChild(inp);
-    lab.appendChild(document.createTextNode(" " + (labels[v] || v)));
+    lab.appendChild(document.createTextNode(" " + (labels[v] ?? labels[String(v)] || v)));
     el.appendChild(lab);
   }
+}
+
+function setChipGroupSelected(containerId, values) {
+  const want = new Set((values || []).map(String));
+  document.querySelectorAll(`#${containerId} input[type="checkbox"]`).forEach((el) => {
+    el.checked = want.has(el.value);
+  });
 }
 
 function promptTitle(key) {
@@ -192,6 +200,30 @@ function selectedInputModes() {
   return checkedValues("chips-input-mode");
 }
 
+function isSweepKey(key) {
+  return (PAYLOAD.sweep_keys || []).includes(key);
+}
+
+function firstRun(key) {
+  for (const d of PAYLOAD.records || []) {
+    const run = runOf(d, key);
+    if (run) return run;
+  }
+  return null;
+}
+
+function sweepRunMatches(key) {
+  const run = firstRun(key);
+  if (!run) return false;
+  const thinking = checkedValues("chips-sweep-thinking");
+  const temps = checkedValues("chips-sweep-temperature");
+  const softs = checkedValues("chips-sweep-soft");
+  if (!thinking.includes(String(Boolean(run.enable_thinking)))) return false;
+  if (!temps.includes(String(run.temperature))) return false;
+  if (!softs.includes(String(run.max_soft_tokens))) return false;
+  return true;
+}
+
 function activePrompts() {
   const sel = checkedValues("chips-prompts");
   const modes = selectedInputModes();
@@ -200,6 +232,7 @@ function activePrompts() {
     if (!sel.includes(k) && !sel.includes(src)) return false;
     if (!modes.includes(inputModeForPrompt(k))) return false;
     if (!promptMatchesModelFilter(k)) return false;
+    if (isSweepKey(k) && !sweepRunMatches(k)) return false;
     return true;
   });
 }
@@ -226,6 +259,7 @@ function labelsAgree(d, keys, columns) {
 const CONF_THRESHOLDS = [0.7, 0.8, 0.9];
 
 function columnLabel(col) {
+  if (isSweepKey(col.key)) return promptTitle(col.key);
   const mid = promptModelId(col.key);
   const prompt = promptTitle(col.key);
   return mid ? `${prompt} · ${modelTitle(mid)}` : prompt;
@@ -560,11 +594,15 @@ function openPromptModal(key) {
   const catalog = PAYLOAD.prompt_catalog || {};
   const meta = catalog[key];
   if (!meta) return;
+  const src = meta.prompt_key || key;
+  const title = isSweepKey(key) && meta.title_en
+    ? esc(meta.title_en)
+    : `<code>${esc(key)}</code>`;
   openInfoModal(
-    `<code>${esc(key)}</code>`,
+    title,
     `${meta.chars} characters · text sent to the model`,
     meta.text || "",
-    `<p class="full-link"><a href="prompts.html#${esc(key)}">Open full prompts page</a></p>`
+    `<p class="full-link"><a href="prompts.html#${esc(src)}">Open full prompts page</a></p>`
   );
 }
 
@@ -669,10 +707,31 @@ function bindChipPair(allId, noneId, groupId) {
   });
 }
 
+function applySweepDefaults() {
+  const defaults = PAYLOAD.sweep_defaults || {
+    thinking: [false],
+    temperature: [1],
+    max_soft_tokens: [280],
+  };
+  setChipGroupSelected("chips-sweep-thinking", defaults.thinking);
+  setChipGroupSelected("chips-sweep-temperature", defaults.temperature);
+  setChipGroupSelected("chips-sweep-soft", defaults.max_soft_tokens);
+}
+
 function bindUi() {
   bindChipPair("btn-prompts-all", "btn-prompts-none", "chips-prompts");
   bindChipPair("btn-models-all", "btn-models-none", "chips-models");
   bindChipPair("btn-input-mode-all", "btn-input-mode-none", "chips-input-mode");
+  onClick("btn-sweep-best", () => {
+    applySweepDefaults();
+    liveRender();
+  });
+  onClick("btn-sweep-none", () => {
+    setChipGroup("chips-sweep-thinking", false);
+    setChipGroup("chips-sweep-temperature", false);
+    setChipGroup("chips-sweep-soft", false);
+    liveRender();
+  });
   onClick("load-more", () => {
     displayLimit += DISPLAY_STEP;
     render();
@@ -762,6 +821,33 @@ async function init() {
           )
         );
     fillChipGroup("chips-input-mode", inputModes, { checked: true });
+
+    const sweepKeys = PAYLOAD.sweep_keys || [];
+    const sweepGroup = $("filter-gemma-sweep");
+    if (sweepGroup) sweepGroup.hidden = !sweepKeys.length;
+    if (sweepKeys.length) {
+      const dims = PAYLOAD.sweep_dims || {};
+      const defaults = PAYLOAD.sweep_defaults || {
+        thinking: [false],
+        temperature: [1],
+        max_soft_tokens: [280],
+      };
+      const thinkingVals = dims.thinking && dims.thinking.length
+        ? dims.thinking
+        : [false, true];
+      fillChipGroup("chips-sweep-thinking", thinkingVals, {
+        labels: Object.fromEntries(
+          thinkingVals.map((v) => [String(v), v ? "on" : "off"])
+        ),
+        selected: defaults.thinking,
+      });
+      fillChipGroup("chips-sweep-temperature", dims.temperature || [], {
+        selected: defaults.temperature,
+      });
+      fillChipGroup("chips-sweep-soft", dims.max_soft_tokens || [], {
+        selected: defaults.max_soft_tokens,
+      });
+    }
 
     renderPromptChips();
     renderModelChips();
