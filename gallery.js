@@ -5,6 +5,7 @@ let SWEEP_RUNS = {};
 let textsPromise = null;
 const DISPLAY_STEP = 12;
 const DEFAULT_PROMPT_KEYS = ["hierarchical_en_no_comment"];
+const GEMMA_BASELINE_KEY = "gemma_hierarchical_en_no_comment";
 let displayLimit = DISPLAY_STEP;
 
 const COLORMAPS = {
@@ -227,15 +228,36 @@ function firstRun(key) {
   return null;
 }
 
+function sweepChipValues(groupId) {
+  return checkedValues(groupId);
+}
+
+function sweepFiltersActive() {
+  return (
+    sweepChipValues("chips-sweep-thinking").length > 0
+    && sweepChipValues("chips-sweep-temperature").length > 0
+    && sweepChipValues("chips-sweep-soft").length > 0
+  );
+}
+
+function sweepChipNum(value) {
+  if (value == null || value === "") return "";
+  const n = Number(value);
+  if (Number.isNaN(n)) return String(value);
+  if (Number.isInteger(n)) return String(n);
+  return String(n);
+}
+
 function sweepRunMatches(key) {
+  if (!sweepFiltersActive()) return false;
   const run = firstRun(key);
   if (!run) return false;
-  const thinking = checkedValues("chips-sweep-thinking");
-  const temps = checkedValues("chips-sweep-temperature");
-  const softs = checkedValues("chips-sweep-soft");
+  const thinking = sweepChipValues("chips-sweep-thinking");
+  const temps = sweepChipValues("chips-sweep-temperature");
+  const softs = sweepChipValues("chips-sweep-soft");
   if (!thinking.includes(String(Boolean(run.enable_thinking)))) return false;
-  if (!temps.includes(String(run.temperature))) return false;
-  if (!softs.includes(String(run.max_soft_tokens))) return false;
+  if (!temps.includes(sweepChipNum(run.temperature))) return false;
+  if (!softs.includes(sweepChipNum(run.max_soft_tokens))) return false;
   return true;
 }
 
@@ -247,7 +269,10 @@ function activePrompts() {
     if (!sel.includes(k) && !sel.includes(src)) return false;
     if (!modes.includes(inputModeForPrompt(k))) return false;
     if (!promptMatchesModelFilter(k)) return false;
-    if (isSweepKey(k) && !sweepRunMatches(k)) return false;
+    if ((PAYLOAD.sweep_keys || []).length) {
+      if (isSweepKey(k) && !sweepRunMatches(k)) return false;
+      if (!sweepFiltersActive() && k === GEMMA_BASELINE_KEY) return false;
+    }
     return true;
   });
 }
@@ -757,9 +782,9 @@ function applySweepDefaults() {
     temperature: [1],
     max_soft_tokens: [280],
   };
-  setChipGroupSelected("chips-sweep-thinking", defaults.thinking);
-  setChipGroupSelected("chips-sweep-temperature", defaults.temperature);
-  setChipGroupSelected("chips-sweep-soft", defaults.max_soft_tokens);
+  setChipGroupSelected("chips-sweep-thinking", (defaults.thinking || []).map((v) => String(v)));
+  setChipGroupSelected("chips-sweep-temperature", (defaults.temperature || []).map((v) => sweepChipNum(v)));
+  setChipGroupSelected("chips-sweep-soft", (defaults.max_soft_tokens || []).map((v) => sweepChipNum(v)));
 }
 
 function bindUi() {
@@ -902,19 +927,19 @@ async function init() {
         max_soft_tokens: [280],
       };
       const thinkingVals = dims.thinking && dims.thinking.length
-        ? dims.thinking
-        : [false, true];
+        ? dims.thinking.map((v) => String(v))
+        : ["false", "true"];
       fillChipGroup("chips-sweep-thinking", thinkingVals, {
-        labels: Object.fromEntries(
-          thinkingVals.map((v) => [String(v), v ? "on" : "off"])
-        ),
-        selected: defaults.thinking,
+        labels: { false: "off", true: "on" },
+        selected: (defaults.thinking || []).map((v) => String(v)),
       });
-      fillChipGroup("chips-sweep-temperature", dims.temperature || [], {
-        selected: defaults.temperature,
+      const tempVals = (dims.temperature || []).map((v) => sweepChipNum(v));
+      fillChipGroup("chips-sweep-temperature", tempVals, {
+        selected: (defaults.temperature || []).map((v) => sweepChipNum(v)),
       });
-      fillChipGroup("chips-sweep-soft", dims.max_soft_tokens || [], {
-        selected: defaults.max_soft_tokens,
+      const softVals = (dims.max_soft_tokens || []).map((v) => sweepChipNum(v));
+      fillChipGroup("chips-sweep-soft", softVals, {
+        selected: (defaults.max_soft_tokens || []).map((v) => sweepChipNum(v)),
       });
     }
 
