@@ -173,7 +173,7 @@ function fillChipGroup(containerId, values, { checked = false, labels = {}, sele
     inp.checked = sel ? sel.has(String(v)) : checked;
     inp.addEventListener("change", liveRender);
     lab.appendChild(inp);
-    lab.appendChild(document.createTextNode(" " + (labels[v] ?? labels[String(v)] || v)));
+    lab.appendChild(document.createTextNode(" " + (labels[v] ?? labels[String(v)] ?? v)));
     el.appendChild(lab);
   }
 }
@@ -855,7 +855,8 @@ async function loadData() {
 
 async function init() {
   const errEl = document.getElementById("load-error");
-  document.getElementById("stats").textContent = "Loading…";
+  const statsEl = document.getElementById("stats");
+  if (statsEl) statsEl.textContent = "Chargement des données…";
   try {
     const loaded = await loadData();
     PAYLOAD = loaded.payload;
