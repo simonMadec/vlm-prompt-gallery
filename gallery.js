@@ -1,6 +1,7 @@
 /** Side-by-side prompt comparison gallery — live chip filters, optional depth. */
 let PAYLOAD = { prompts: [], stats: {}, records: [] };
 let TEXTS = {};
+let textsPromise = null;
 const DISPLAY_STEP = 200;
 let displayLimit = DISPLAY_STEP;
 
@@ -181,6 +182,14 @@ function setChipGroupSelected(containerId, values) {
 function promptTitle(key) {
   const catalog = PAYLOAD.prompt_catalog || {};
   return (catalog[key] && catalog[key].title_en) || key;
+}
+
+function promptText(key) {
+  const catalog = PAYLOAD.prompt_catalog || {};
+  const meta = catalog[key] || {};
+  const src = meta.prompt_key || key;
+  const texts = PAYLOAD.prompt_texts || {};
+  return texts[src] || meta.text || "";
 }
 
 function runInputMode(run) {
@@ -557,7 +566,8 @@ function render() {
   }
 }
 
-function openLightbox(id) {
+async function openLightbox(id) {
+  await ensureTexts();
   const d = PAYLOAD.records.find((x) => x.id === id);
   if (!d) return;
   const columns = activeColumns();
@@ -595,13 +605,14 @@ function openPromptModal(key) {
   const meta = catalog[key];
   if (!meta) return;
   const src = meta.prompt_key || key;
+  const text = promptText(key);
   const title = isSweepKey(key) && meta.title_en
     ? esc(meta.title_en)
     : `<code>${esc(key)}</code>`;
   openInfoModal(
     title,
-    `${meta.chars} characters · text sent to the model`,
-    meta.text || "",
+    `${meta.chars || text.length} characters · text sent to the model`,
+    text,
     `<p class="full-link"><a href="prompts.html#${esc(src)}">Open full prompts page</a></p>`
   );
 }
@@ -771,22 +782,30 @@ function bindUi() {
   });
 }
 
+async function ensureTexts() {
+  if (TEXTS && Object.keys(TEXTS).length) return TEXTS;
+  if (!textsPromise) {
+    textsPromise = fetch("texts.json")
+      .then((res) => (res.ok ? res.json() : {}))
+      .then((data) => {
+        TEXTS = data || {};
+        return TEXTS;
+      })
+      .catch(() => {
+        TEXTS = {};
+        return TEXTS;
+      });
+  }
+  return textsPromise;
+}
+
 async function loadData() {
   if (window.GALLERY_DATA && Array.isArray(window.GALLERY_DATA.records)) {
-    return {
-      payload: window.GALLERY_DATA,
-      texts: window.GALLERY_TEXTS || {},
-    };
+    return { payload: window.GALLERY_DATA };
   }
-  const [dataRes, textsRes] = await Promise.all([
-    fetch("data.json"),
-    fetch("texts.json"),
-  ]);
+  const dataRes = await fetch("data.json");
   if (!dataRes.ok) throw new Error("data.json introuvable (HTTP " + dataRes.status + ")");
-  return {
-    payload: await dataRes.json(),
-    texts: textsRes.ok ? await textsRes.json() : {},
-  };
+  return { payload: await dataRes.json() };
 }
 
 async function init() {
@@ -795,7 +814,6 @@ async function init() {
   try {
     const loaded = await loadData();
     PAYLOAD = loaded.payload;
-    TEXTS = loaded.texts;
     if (!PAYLOAD.records || !PAYLOAD.records.length) {
       throw new Error("aucune image dans les données");
     }
@@ -853,6 +871,9 @@ async function init() {
     renderModelChips();
     bindUi();
     render();
+    ensureTexts().then(() => {
+      if (Object.keys(TEXTS).length) render();
+    });
     errEl.style.display = "none";
   } catch (err) {
     const stats = $("stats");
@@ -860,7 +881,7 @@ async function init() {
     if (errEl) {
       errEl.style.display = "block";
       errEl.textContent =
-        "Impossible de charger les données (data.js / data.json). " +
+        "Impossible de charger les données (data.json). " +
         "Relancez: python3 compare_prompt_gallery.py — " +
         err.message;
     }
