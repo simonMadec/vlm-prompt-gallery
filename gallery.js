@@ -305,6 +305,27 @@ function columnLabel(col) {
   return mid ? `${prompt} · ${modelTitle(mid)}` : prompt;
 }
 
+function activeModelIds() {
+  const ids = new Set();
+  for (const col of activeColumns()) {
+    const mid = promptModelId(col.key);
+    if (mid) ids.add(canonicalModel(mid));
+  }
+  return [...ids].sort((a, b) => modelTitle(a).localeCompare(modelTitle(b), "en"));
+}
+
+function runInferenceParams(run, colKey) {
+  if (!run) return {};
+  const base = { ...((PAYLOAD.model_catalog[run.model] || {}).parameters || {}) };
+  if (run.enable_thinking != null) base.enable_thinking = run.enable_thinking;
+  if (run.temperature != null) base.temperature = run.temperature;
+  if (run.max_soft_tokens != null) base.max_soft_tokens = run.max_soft_tokens;
+  if (run.input_mode) base.input_mode = run.input_mode;
+  if (run.run_name) base.run_name = run.run_name;
+  base.column = colKey;
+  return base;
+}
+
 function scoredAt(col, minConf) {
   const runs = [];
   for (const d of PAYLOAD.records || []) {
@@ -535,7 +556,7 @@ function predCell(d, col) {
   const coarseCls = run.coarse_inferred ? "pred-coarse inferred" : "pred-coarse";
   const coarseNote = run.coarse_inferred ? " (from fine)" : "";
   const subModel = run.model
-    ? `<div class="model-link" data-model="${esc(run.model)}">${esc(modelTitle(run.model))}</div>`
+    ? `<div class="model-link" data-model="${esc(run.model)}" data-col="${esc(col.key)}">${esc(modelTitle(run.model))}</div>`
     : "";
   return `<div class="pred ${cls}">
     ${head}
@@ -580,6 +601,7 @@ function render() {
       (rows.length > displayLimit ? ` · ${shown.length} shown` : "");
   }
   renderAccTable(columns);
+  renderModelChips();
 
   grid.replaceChildren();
 
@@ -675,19 +697,34 @@ function openPromptModal(key) {
   );
 }
 
-function openModelModal(name) {
-  const catalog = PAYLOAD.model_catalog || {};
-  const meta = catalog[name] || { name, parameters: {}, token_usage: {} };
-  const params = { ...(meta.parameters || {}) };
-  if (meta.token_usage && Object.keys(meta.token_usage).length) {
-    params.token_usage = meta.token_usage;
+function openModelModal(name, colKey) {
+  const canon = canonicalModel(name);
+  let params;
+  let sub = "Model inference parameters";
+  if (colKey) {
+    params = runInferenceParams(firstRun(colKey), colKey);
+    sub = `${columnLabel({ key: colKey })} · parameters for this column`;
+  } else {
+    const cols = activeColumns().filter(
+      (c) => canonicalModel(promptModelId(c.key)) === canon
+    );
+    if (!cols.length) return;
+    if (cols.length === 1) {
+      params = runInferenceParams(firstRun(cols[0].key), cols[0].key);
+      sub = `${columnLabel(cols[0])} · parameters for this column`;
+      const meta = (PAYLOAD.model_catalog || {})[name] || {};
+      if (meta.token_usage && Object.keys(meta.token_usage).length) {
+        params.token_usage = meta.token_usage;
+      }
+    } else {
+      params = Object.fromEntries(
+        cols.map((c) => [columnLabel(c), runInferenceParams(firstRun(c.key), c.key)])
+      );
+      sub = `${cols.length} visible runs for ${modelTitle(name)}`;
+    }
   }
   const text = JSON.stringify(params, null, 2);
-  openInfoModal(
-    `<code>${esc(name)}</code>`,
-    "Model inference parameters",
-    text || "{}"
-  );
+  openInfoModal(`<code>${esc(name)}</code>`, sub, text || "{}");
 }
 
 function openInfoModal(titleHtml, sub, preText, extraHtml = "") {
@@ -729,8 +766,7 @@ function renderModelChips() {
   const el = $("model-chips");
   if (!el) return;
   el.replaceChildren();
-  const catalog = PAYLOAD.model_catalog || {};
-  const names = Object.keys(catalog).sort();
+  const names = activeModelIds();
   for (const name of names) {
     const btn = document.createElement("button");
     btn.type = "button";
@@ -749,7 +785,8 @@ function bindPromptLinks() {
     if (modelLink) {
       e.stopPropagation();
       const name = modelLink.getAttribute("data-model");
-      if (name) openModelModal(name);
+      const col = modelLink.getAttribute("data-col");
+      if (name) openModelModal(name, col || null);
       return;
     }
     const link = e.target.closest(".prompt-link");
