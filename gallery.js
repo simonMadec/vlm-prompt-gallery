@@ -976,7 +976,7 @@ function bindUi() {
 async function ensureTexts() {
   if (TEXTS && Object.keys(TEXTS).length) return TEXTS;
   if (!textsPromise) {
-    textsPromise = fetch("texts.json")
+    textsPromise = fetch(cacheBustedUrl("texts.json"))
       .then((res) => (res.ok ? res.json() : {}))
       .then((data) => {
         TEXTS = data || {};
@@ -990,13 +990,34 @@ async function ensureTexts() {
   return textsPromise;
 }
 
+function galleryCacheBust() {
+  if (window.GALLERY_CACHE_BUST) return String(window.GALLERY_CACHE_BUST);
+  const src = document.querySelector('script[src*="gallery.js"]')?.getAttribute("src") || "";
+  const match = src.match(/[?&]v=([^&]+)/);
+  return match ? match[1] : String(Date.now());
+}
+
+function cacheBustedUrl(path) {
+  const sep = path.includes("?") ? "&" : "?";
+  return path + sep + "v=" + encodeURIComponent(galleryCacheBust());
+}
+
+function softsFromSweepKeys(keys) {
+  const found = new Set();
+  for (const key of keys || []) {
+    const match = String(key).match(/soft(\d+)$/i);
+    if (match) found.add(match[1]);
+  }
+  return [...found].sort((a, b) => Number(a) - Number(b));
+}
+
 async function loadData() {
   if (window.GALLERY_DATA && Array.isArray(window.GALLERY_DATA.records)) {
     return { payload: window.GALLERY_DATA, sweeps: window.GALLERY_SWEEPS || {} };
   }
   const [dataRes, sweepRes] = await Promise.all([
-    fetch("data.json"),
-    fetch("sweeps.json"),
+    fetch(cacheBustedUrl("data.json")),
+    fetch(cacheBustedUrl("sweeps.json")),
   ]);
   if (!dataRes.ok) throw new Error("data.json introuvable (HTTP " + dataRes.status + ")");
   return {
@@ -1064,7 +1085,12 @@ async function init() {
       fillChipGroup("chips-sweep-temperature", tempVals, {
         selected: (defaults.temperature || []).map((v) => sweepChipNum(v)),
       });
-      const softVals = (dims.max_soft_tokens || []).map((v) => sweepChipNum(v));
+      const softVals = [
+        ...new Set([
+          ...(dims.max_soft_tokens || []).map((v) => sweepChipNum(v)),
+          ...softsFromSweepKeys(sweepKeys),
+        ]),
+      ].sort((a, b) => Number(a) - Number(b));
       fillChipGroup("chips-sweep-soft", softVals, {
         selected: (defaults.max_soft_tokens || []).map((v) => sweepChipNum(v)),
       });
