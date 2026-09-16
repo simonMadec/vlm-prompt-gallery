@@ -314,12 +314,20 @@ function sweepChipValues(groupId) {
   return checkedValues(groupId);
 }
 
+function sweepMaskChipsPresent() {
+  const el = $("chips-sweep-mask");
+  return Boolean(el && el.querySelectorAll('input[type="checkbox"]').length);
+}
+
 function sweepFiltersActive() {
-  return (
+  const base = (
     sweepChipValues("chips-sweep-thinking").length > 0
     && sweepChipValues("chips-sweep-temperature").length > 0
     && sweepChipValues("chips-sweep-soft").length > 0
   );
+  if (!base) return false;
+  if (sweepMaskChipsPresent() && sweepChipValues("chips-sweep-mask").length === 0) return false;
+  return true;
 }
 
 function sweepChipNum(value) {
@@ -340,6 +348,10 @@ function sweepRunMatches(key) {
   if (!thinking.includes(String(Boolean(run.enable_thinking)))) return false;
   if (!temps.includes(sweepChipNum(run.temperature))) return false;
   if (!softs.includes(sweepChipNum(run.max_soft_tokens))) return false;
+  if (sweepMaskChipsPresent()) {
+    const masks = sweepChipValues("chips-sweep-mask");
+    if (!masks.includes(String(run.mask || "none"))) return false;
+  }
   return true;
 }
 
@@ -912,6 +924,9 @@ function applySweepDefaults() {
   setChipGroupSelected("chips-sweep-thinking", (defaults.thinking || []).map((v) => String(v)));
   setChipGroupSelected("chips-sweep-temperature", (defaults.temperature || []).map((v) => sweepChipNum(v)));
   setChipGroupSelected("chips-sweep-soft", (defaults.max_soft_tokens || []).map((v) => sweepChipNum(v)));
+  if (sweepMaskChipsPresent()) {
+    setChipGroupSelected("chips-sweep-mask", (defaults.mask || ["none"]).map((v) => String(v)));
+  }
 }
 
 function bindUi() {
@@ -926,6 +941,7 @@ function bindUi() {
     setChipGroup("chips-sweep-thinking", false);
     setChipGroup("chips-sweep-temperature", false);
     setChipGroup("chips-sweep-soft", false);
+    setChipGroup("chips-sweep-mask", false);
     liveRender();
   });
   onClick("load-more", () => {
@@ -1005,7 +1021,7 @@ function cacheBustedUrl(path) {
 function softsFromSweepKeys(keys) {
   const found = new Set();
   for (const key of keys || []) {
-    const match = String(key).match(/soft(\d+)$/i);
+    const match = String(key).match(/soft(\d+)/i);
     if (match) found.add(match[1]);
   }
   return [...found].sort((a, b) => Number(a) - Number(b));
@@ -1093,6 +1109,15 @@ async function init() {
       ].sort((a, b) => Number(a) - Number(b));
       fillChipGroup("chips-sweep-soft", softVals, {
         selected: (defaults.max_soft_tokens || []).map((v) => sweepChipNum(v)),
+      });
+      const maskOrder = ["none", "3-25", "3-35", "v2"];
+      const maskSeen = new Set((dims.mask || []).map((v) => String(v)));
+      const maskVals = [
+        ...maskOrder.filter((v) => maskSeen.has(v)),
+        ...[...maskSeen].filter((v) => !maskOrder.includes(v)).sort(),
+      ];
+      fillChipGroup("chips-sweep-mask", maskVals, {
+        selected: (defaults.mask || ["none"]).map((v) => String(v)),
       });
     }
 
