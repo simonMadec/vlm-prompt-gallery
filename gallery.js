@@ -319,6 +319,11 @@ function sweepMaskChipsPresent() {
   return Boolean(el && el.querySelectorAll('input[type="checkbox"]').length);
 }
 
+function sweepTopkChipsPresent() {
+  const el = $("chips-sweep-topk");
+  return Boolean(el && el.querySelectorAll('input[type="checkbox"]').length);
+}
+
 function sweepFiltersActive() {
   const base = (
     sweepChipValues("chips-sweep-thinking").length > 0
@@ -326,6 +331,7 @@ function sweepFiltersActive() {
     && sweepChipValues("chips-sweep-soft").length > 0
   );
   if (!base) return false;
+  if (sweepTopkChipsPresent() && sweepChipValues("chips-sweep-topk").length === 0) return false;
   if (sweepMaskChipsPresent() && sweepChipValues("chips-sweep-mask").length === 0) return false;
   return true;
 }
@@ -348,6 +354,10 @@ function sweepRunMatches(key) {
   if (!thinking.includes(String(Boolean(run.enable_thinking)))) return false;
   if (!temps.includes(sweepChipNum(run.temperature))) return false;
   if (!softs.includes(sweepChipNum(run.max_soft_tokens))) return false;
+  if (sweepTopkChipsPresent()) {
+    const topks = sweepChipValues("chips-sweep-topk");
+    if (!topks.includes(sweepChipNum(run.top_k ?? 64))) return false;
+  }
   if (sweepMaskChipsPresent()) {
     const masks = sweepChipValues("chips-sweep-mask");
     if (!masks.includes(String(run.mask || "none"))) return false;
@@ -364,8 +374,8 @@ function activePrompts() {
     if (!modes.includes(inputModeForPrompt(k))) return false;
     if (!promptMatchesModelFilter(k)) return false;
     if ((PAYLOAD.sweep_keys || []).length) {
-      if (isSweepKey(k) && !sweepRunMatches(k)) return false;
-      if (!sweepFiltersActive() && k === GEMMA_BASELINE_KEY) return false;
+      const sweepManaged = isSweepKey(k) || k === GEMMA_BASELINE_KEY;
+      if (sweepManaged && !sweepRunMatches(k)) return false;
     }
     return true;
   });
@@ -414,6 +424,7 @@ function runInferenceParams(run, colKey) {
   if (run.enable_thinking != null) base.enable_thinking = run.enable_thinking;
   if (run.temperature != null) base.temperature = run.temperature;
   if (run.max_soft_tokens != null) base.max_soft_tokens = run.max_soft_tokens;
+  if (run.top_k != null) base.top_k = run.top_k;
   if (run.input_mode) base.input_mode = run.input_mode;
   if (run.run_name) base.run_name = run.run_name;
   base.column = colKey;
@@ -920,10 +931,14 @@ function applySweepDefaults() {
     thinking: [false],
     temperature: [1],
     max_soft_tokens: [280],
+    top_k: [64],
   };
   setChipGroupSelected("chips-sweep-thinking", (defaults.thinking || []).map((v) => String(v)));
   setChipGroupSelected("chips-sweep-temperature", (defaults.temperature || []).map((v) => sweepChipNum(v)));
   setChipGroupSelected("chips-sweep-soft", (defaults.max_soft_tokens || []).map((v) => sweepChipNum(v)));
+  if (sweepTopkChipsPresent()) {
+    setChipGroupSelected("chips-sweep-topk", (defaults.top_k || [64]).map((v) => sweepChipNum(v)));
+  }
   if (sweepMaskChipsPresent()) {
     setChipGroupSelected("chips-sweep-mask", (defaults.mask || ["none"]).map((v) => String(v)));
   }
@@ -941,6 +956,7 @@ function bindUi() {
     setChipGroup("chips-sweep-thinking", false);
     setChipGroup("chips-sweep-temperature", false);
     setChipGroup("chips-sweep-soft", false);
+    setChipGroup("chips-sweep-topk", false);
     setChipGroup("chips-sweep-mask", false);
     liveRender();
   });
@@ -1089,6 +1105,7 @@ async function init() {
         thinking: [false],
         temperature: [1],
         max_soft_tokens: [280],
+        top_k: [64],
       };
       const thinkingVals = dims.thinking && dims.thinking.length
         ? dims.thinking.map((v) => String(v))
@@ -1109,6 +1126,10 @@ async function init() {
       ].sort((a, b) => Number(a) - Number(b));
       fillChipGroup("chips-sweep-soft", softVals, {
         selected: (defaults.max_soft_tokens || []).map((v) => sweepChipNum(v)),
+      });
+      const topkVals = (dims.top_k || []).map((v) => sweepChipNum(v));
+      fillChipGroup("chips-sweep-topk", topkVals, {
+        selected: (defaults.top_k || [64]).map((v) => sweepChipNum(v)),
       });
       const maskOrder = ["none", "3-25", "3-35", "v2"];
       const maskSeen = new Set((dims.mask || []).map((v) => String(v)));
