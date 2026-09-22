@@ -30,7 +30,7 @@
     <p style="color:#8b949e">Texte exact envoyé au modèle pour chaque variante.</p>
     <p class="nav"><a href="gallery.html">← Retour à la galerie</a></p>
     <ul class="toc">
-      <li><a href="#hierarchical"><code>hierarchical</code></a> — hierarchical</li><li><a href="#gemma_hierarchical"><code>gemma_hierarchical</code></a> — hierarchical</li><li><a href="#qwen_hierarchical"><code>qwen_hierarchical</code></a> — hierarchical</li><li><a href="#haiku_depth"><code>haiku_depth</code></a> — hierarchical + depth</li><li><a href="#gemma_haiku_depth"><code>gemma_haiku_depth</code></a> — hierarchical + depth</li><li><a href="#qwen_haiku_depth"><code>qwen_haiku_depth</code></a> — hierarchical + depth</li><li><a href="#hierarchical_en_no_comment"><code>hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li><li><a href="#gemma_hierarchical_en_no_comment"><code>gemma_hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li><li><a href="#qwen_hierarchical_en_no_comment"><code>qwen_hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li>
+      <li><a href="#hierarchical"><code>hierarchical</code></a> — hierarchical</li><li><a href="#gemma_hierarchical"><code>gemma_hierarchical</code></a> — hierarchical</li><li><a href="#qwen_hierarchical"><code>qwen_hierarchical</code></a> — hierarchical</li><li><a href="#haiku_depth"><code>haiku_depth</code></a> — hierarchical + depth</li><li><a href="#gemma_haiku_depth"><code>gemma_haiku_depth</code></a> — hierarchical + depth</li><li><a href="#qwen_haiku_depth"><code>qwen_haiku_depth</code></a> — hierarchical + depth</li><li><a href="#hierarchical_en_no_comment"><code>hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li><li><a href="#qwen_hierarchical_en_no_comment"><code>qwen_hierarchical_en_no_comment</code></a> — hierarchical (no comment)</li>
     </ul>
   </header>
 <section class="prompt-block" id="hierarchical">
@@ -551,80 +551,6 @@ Do not ignore a clearly identifiable annual crop on the ground just because
 trees appear in the RGB image.</pre>
 </section><section class="prompt-block" id="hierarchical_en_no_comment">
   <h2><code>hierarchical_en_no_comment</code> — hierarchical (no comment)</h2>
-  <p class="meta">2725 caractères · source: landcover_prompts.py</p>
-  <pre>You are classifying ground-level street-view photos from rural Benin (Parakou landscapes).
-
-The photo is taken from a road. IGNORE the road strip at the bottom unless the entire image is road or bare soil.
-
-Classify LAND USE of the main plot, not the tallest object.
-
-Trees in FRONT of the plot, trees BEHIND the plot, and roadside trees must not steal the label from an identifiable annual crop.
-
-These labels will train satellite land-cover models. If you cannot see the plot, return unclassifiable. Never use Agroforestry.
-
-## Step A — coarse class (mandatory)
-Exactly one of:
-- built_up
-- bare_road
-- water
-- annual_crop
-- tree_crop
-- natural_vegetation
-- unclassifiable
-
-## Step B — fine class (mandatory)
-class_name_en MUST be copied EXACTLY from the list under the coarse class you chose. Never invent a name. Never use &quot;Wooded fallow&quot;, &quot;Tree savanna&quot;, &quot;Shrubby fallow&quot;, &quot;Other Crop&quot;, &quot;Other Orchard&quot;, &quot;Other Class&quot;, or &quot;Agroforestry&quot;.
-
-### built_up
-- Built-up
-
-### bare_road
-- Bare road
-
-### water
-- Water
-
-### annual_crop
-- Maize
-- Sorghum/Millet
-- Soybean
-- Yam
-- Cassava
-- Rice
-- Cotton
-- Cowpea
-- Groundnut
-- Other annual herbaceous crop
-
-### tree_crop
-- Cashew
-- Mango
-- Teak
-- Gmelina arborea
-- Other orchard
-
-### natural_vegetation
-- Forest
-- Herbaceous savanna
-- Shrubby vegetation
-
-### unclassifiable
-- Unclassifiable
-
-## Decision rules (in order)
-0. Unusable photo, ground of the plot not visible, or two land uses co-dominant → unclassifiable (usable_for_satellite_gt=false; reject_reason=unusable_image|ground_not_visible|mixed_plots|unknown_land_use).
-1. If buildings dominate → Built-up. If the photo is mostly road/bare laterite → Bare road.
-2. If an annual crop is identifiable on the ground → annual_crop, even if trees stand in FRONT or BEHIND.
-3. If trees are planted (spacing, same species, plantation form) → tree_crop, even if the understory is weedy or grassy.
-4. Closed canopy, no field → Forest. Open grass → Herbaceous savanna. Mixed shrubs/trees, parkland, uncultivated open woodland → Shrubby vegetation.
-5. NEVER use natural_vegetation as the default because &quot;there are trees&quot;. Trees in front that fully hide the ground → Unclassifiable, not Shrubby vegetation.
-6. Confidence: ≥0.85 only with organ-level cues (panicles, cobs, mounds, cashew apples, teak leaves, palmate cassava). Species guess without those cues: 0.4–0.7. Coarse class can be more confident than the fine class.
-
-JSON only (no markdown):
-{&quot;level1&quot;:&quot;&lt;coarse&gt;&quot;,&quot;level1_confidence&quot;:&lt;0-1&gt;,&quot;class_name_en&quot;:&quot;&lt;exact fine label&gt;&quot;,&quot;confidence&quot;:&lt;0-1&gt;,&quot;cues&quot;:[&quot;&lt;cue&gt;&quot;],&quot;reasoning&quot;:&quot;&lt;1-2 sentences&gt;&quot;,&quot;usable_for_satellite_gt&quot;:&lt;true|false&gt;,&quot;reject_reason&quot;:null|&quot;unusable_image&quot;|&quot;ground_not_visible&quot;|&quot;mixed_plots&quot;|&quot;unknown_land_use&quot;}
-</pre>
-</section><section class="prompt-block" id="gemma_hierarchical_en_no_comment">
-  <h2><code>gemma_hierarchical_en_no_comment</code> — hierarchical (no comment)</h2>
   <p class="meta">2725 caractères · source: landcover_prompts.py</p>
   <pre>You are classifying ground-level street-view photos from rural Benin (Parakou landscapes).
 

@@ -5,7 +5,6 @@ let SWEEP_RUNS = {};
 let textsPromise = null;
 const DISPLAY_STEP = 12;
 const DEFAULT_PROMPT_KEYS = ["hierarchical_en_no_comment"];
-const GEMMA_BASELINE_KEY = "gemma_hierarchical_en_no_comment";
 let displayLimit = DISPLAY_STEP;
 
 const COLORMAPS = {
@@ -373,9 +372,8 @@ function activePrompts() {
     if (!sel.includes(k) && !sel.includes(src)) return false;
     if (!modes.includes(inputModeForPrompt(k))) return false;
     if (!promptMatchesModelFilter(k)) return false;
-    if ((PAYLOAD.sweep_keys || []).length) {
-      const sweepManaged = isSweepKey(k) || k === GEMMA_BASELINE_KEY;
-      if (sweepManaged && !sweepRunMatches(k)) return false;
+    if ((PAYLOAD.sweep_keys || []).length && isSweepKey(k) && !sweepRunMatches(k)) {
+      return false;
     }
     return true;
   });
