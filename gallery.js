@@ -323,6 +323,11 @@ function sweepTopkChipsPresent() {
   return Boolean(el && el.querySelectorAll('input[type="checkbox"]').length);
 }
 
+function sweepRepChipsPresent() {
+  const el = $("chips-sweep-rep");
+  return Boolean(el && el.querySelectorAll('input[type="checkbox"]').length);
+}
+
 function sweepFiltersActive() {
   const base = (
     sweepChipValues("chips-sweep-thinking").length > 0
@@ -331,6 +336,7 @@ function sweepFiltersActive() {
   );
   if (!base) return false;
   if (sweepTopkChipsPresent() && sweepChipValues("chips-sweep-topk").length === 0) return false;
+  if (sweepRepChipsPresent() && sweepChipValues("chips-sweep-rep").length === 0) return false;
   if (sweepMaskChipsPresent() && sweepChipValues("chips-sweep-mask").length === 0) return false;
   return true;
 }
@@ -356,6 +362,10 @@ function sweepRunMatches(key) {
   if (sweepTopkChipsPresent()) {
     const topks = sweepChipValues("chips-sweep-topk");
     if (!topks.includes(sweepChipNum(run.top_k ?? 64))) return false;
+  }
+  if (sweepRepChipsPresent()) {
+    const reps = sweepChipValues("chips-sweep-rep");
+    if (!reps.includes(sweepChipNum(run.repetition_penalty ?? 1))) return false;
   }
   if (sweepMaskChipsPresent()) {
     const masks = sweepChipValues("chips-sweep-mask");
@@ -423,6 +433,7 @@ function runInferenceParams(run, colKey) {
   if (run.temperature != null) base.temperature = run.temperature;
   if (run.max_soft_tokens != null) base.max_soft_tokens = run.max_soft_tokens;
   if (run.top_k != null) base.top_k = run.top_k;
+  if (run.repetition_penalty != null) base.repetition_penalty = run.repetition_penalty;
   if (run.input_mode) base.input_mode = run.input_mode;
   if (run.run_name) base.run_name = run.run_name;
   base.column = colKey;
@@ -930,12 +941,19 @@ function applySweepDefaults() {
     temperature: [1],
     max_soft_tokens: [280],
     top_k: [64],
+    repetition_penalty: [1],
   };
   setChipGroupSelected("chips-sweep-thinking", (defaults.thinking || []).map((v) => String(v)));
   setChipGroupSelected("chips-sweep-temperature", (defaults.temperature || []).map((v) => sweepChipNum(v)));
   setChipGroupSelected("chips-sweep-soft", (defaults.max_soft_tokens || []).map((v) => sweepChipNum(v)));
   if (sweepTopkChipsPresent()) {
     setChipGroupSelected("chips-sweep-topk", (defaults.top_k || [64]).map((v) => sweepChipNum(v)));
+  }
+  if (sweepRepChipsPresent()) {
+    setChipGroupSelected(
+      "chips-sweep-rep",
+      (defaults.repetition_penalty || [1]).map((v) => sweepChipNum(v)),
+    );
   }
   if (sweepMaskChipsPresent()) {
     setChipGroupSelected("chips-sweep-mask", (defaults.mask || ["none"]).map((v) => String(v)));
@@ -955,6 +973,7 @@ function bindUi() {
     setChipGroup("chips-sweep-temperature", false);
     setChipGroup("chips-sweep-soft", false);
     setChipGroup("chips-sweep-topk", false);
+    setChipGroup("chips-sweep-rep", false);
     setChipGroup("chips-sweep-mask", false);
     liveRender();
   });
@@ -1104,6 +1123,7 @@ async function init() {
         temperature: [1],
         max_soft_tokens: [280],
         top_k: [64],
+        repetition_penalty: [1],
       };
       const thinkingVals = dims.thinking && dims.thinking.length
         ? dims.thinking.map((v) => String(v))
@@ -1128,6 +1148,10 @@ async function init() {
       const topkVals = (dims.top_k || []).map((v) => sweepChipNum(v));
       fillChipGroup("chips-sweep-topk", topkVals, {
         selected: (defaults.top_k || [64]).map((v) => sweepChipNum(v)),
+      });
+      const repVals = (dims.repetition_penalty || [1]).map((v) => sweepChipNum(v));
+      fillChipGroup("chips-sweep-rep", repVals, {
+        selected: (defaults.repetition_penalty || [1]).map((v) => sweepChipNum(v)),
       });
       const maskOrder = ["none", "3-25", "3-35", "v2"];
       const maskSeen = new Set((dims.mask || []).map((v) => String(v)));
