@@ -4,7 +4,7 @@ let TEXTS = {};
 let SWEEP_RUNS = {};
 let textsPromise = null;
 const DISPLAY_STEP = 12;
-const DEFAULT_PROMPT_KEYS = ["hierarchical_en_no_comment"];
+const FALLBACK_PROMPT_KEYS = ["hierarchical_en_no_comment"];
 let displayLimit = DISPLAY_STEP;
 
 const COLORMAPS = {
@@ -1158,7 +1158,12 @@ async function init() {
     const promptLabels = Object.fromEntries(
       promptChipIds.map((k) => [k, promptTitle(k)])
     );
-    const defaultPrompts = DEFAULT_PROMPT_KEYS.filter((k) => promptChipIds.includes(k));
+    const preferred = (PAYLOAD.default_prompt_keys || FALLBACK_PROMPT_KEYS).filter((k) =>
+      promptChipIds.includes(k)
+    );
+    const defaultPrompts = preferred.length
+      ? preferred
+      : FALLBACK_PROMPT_KEYS.filter((k) => promptChipIds.includes(k));
     fillChipGroup("chips-prompts", promptChipIds, {
       checked: false,
       labels: promptLabels,
