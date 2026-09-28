@@ -617,11 +617,70 @@ function filterData() {
 function explainBody(t) {
   const reasoning = (t && t.reasoning) || "";
   const thinking = (t && t.thinking) || "";
-  if (!reasoning && !thinking) return "";
+  const scene = (t && t.scene_description) || "";
+  if (!reasoning && !thinking && !scene) return "";
   return [
+    scene ? `<div class="reason"><strong>scene</strong>\n${esc(scene)}</div>` : "",
     reasoning ? `<div class="reason">${esc(reasoning)}</div>` : "",
     thinking ? `<div class="reason"><strong>thinking</strong>\n${esc(thinking)}</div>` : "",
   ].join("");
+}
+
+function sharePct(v) {
+  if (v == null || Number.isNaN(Number(v))) return "";
+  return `<span class="share">${Math.round(Number(v) * 100)}%</span>`;
+}
+
+function predExtraMeta(run) {
+  if (!run) return "";
+  const bits = [];
+  if (run.location) {
+    const sec = run.location_secondary ? ` + ${esc(run.location_secondary)}` : "";
+    bits.push(
+      `<div><span class="pred-k">location</span> ${esc(run.location)}${sec}</div>`
+    );
+  }
+  if (run.ground_relation) {
+    bits.push(
+      `<div><span class="pred-k">ground</span> ${esc(run.ground_relation)}</div>`
+    );
+  }
+  if (run.code_l1 != null || run.cname_l1) {
+    const code =
+      run.code_l1 != null
+        ? `${run.code_l0 != null ? run.code_l0 + "/" : ""}${run.code_l1}`
+        : "";
+    const name = [run.cname_l0, run.cname_l1].filter(Boolean).join(" › ");
+    bits.push(
+      `<div><span class="pred-k">OBS</span> ${esc(code)}${name ? " · " + esc(name) : ""}</div>`
+    );
+  }
+  const plots = Array.isArray(run.plots) ? run.plots : [];
+  if (plots.length) {
+    const parts = plots.map((p) => {
+      const share = sharePct(p.share);
+      const conf =
+        p.confidence != null ? `<span class="score">${pct(p.confidence)}</span>` : "";
+      return `${esc(p.class_name_en || "?")}${share ? " " + share : ""}${conf ? " " + conf : ""}`;
+    });
+    bits.push(
+      `<div class="pred-plots"><span class="pred-k">plots</span> ${parts.join(" · ")}</div>`
+    );
+  }
+  const cands = Array.isArray(run.candidates) ? run.candidates : [];
+  if (cands.length) {
+    const parts = cands.map((c) => {
+      const where = c.where ? ` (${esc(c.where)})` : "";
+      const conf =
+        c.confidence != null ? ` <span class="score">${pct(c.confidence)}</span>` : "";
+      return `${esc(c.class_name_en || "?")}${where}${conf}`;
+    });
+    bits.push(
+      `<div class="pred-cands"><span class="pred-k">candidates</span> ${parts.join(" · ")}</div>`
+    );
+  }
+  if (!bits.length) return "";
+  return `<div class="pred-extra">${bits.join("")}</div>`;
 }
 
 function explainBlock(run, imageId, colKey) {
@@ -629,16 +688,21 @@ function explainBlock(run, imageId, colKey) {
   const cues = (run.cues || []).join(" · ");
   const t = imageId && colKey && TEXTS[imageId] ? TEXTS[imageId][colKey] : null;
   const extra = explainBody(t);
-  if (!cues && !extra && !imageId) return "";
+  const hasScene = !!(run.scene_description || (t && t.scene_description));
+  if (!cues && !extra && !imageId && !hasScene) return "";
   if (!imageId) {
-    if (!cues && !extra) return "";
+    if (!cues && !extra && !hasScene) return "";
+    const sceneInline = run.scene_description
+      ? `<div class="reason"><strong>scene</strong>\n${esc(run.scene_description)}</div>`
+      : "";
     return `<details class="explain"><summary>explanation</summary>${
       cues ? `<div>${esc(cues)}</div>` : ""
-    }${extra}</details>`;
+    }${sceneInline}${extra}</details>`;
   }
   return `<details class="explain" data-img="${esc(imageId)}" data-col="${esc(colKey)}">
     <summary>explanation</summary>
     ${cues ? `<div>${esc(cues)}</div>` : ""}
+    ${run.scene_description ? `<div class="reason"><strong>scene</strong>\n${esc(run.scene_description)}</div>` : ""}
     ${extra ? extra : '<div class="reason lazy-body"></div>'}
   </details>`;
 }
@@ -688,6 +752,7 @@ function predCell(d, col) {
       <div><span class="pred-k">coarse</span> <span class="${coarseCls}">${esc(coarse || "—")}${coarseNote}</span></div>
       <div class="pred-label"><span class="pred-k">fine</span> ${esc(fine)} <span class="score">${pct(run.confidence)}</span></div>
     </div>
+    ${predExtraMeta(run)}
     ${explainBlock(run, d.id, col.key)}
   </div>`;
 }
