@@ -671,14 +671,37 @@ function predExtraMeta(run) {
   }
   const cands = Array.isArray(run.candidates) ? run.candidates : [];
   if (cands.length) {
-    const parts = cands.map((c) => {
-      const where = c.where ? ` (${esc(c.where)})` : "";
-      const conf =
-        c.confidence != null ? ` <span class="score">${pct(c.confidence)}</span>` : "";
-      return `${esc(c.class_name_en || "?")}${where}${conf}`;
-    });
+    const hasShare = cands.some((c) => c.share != null && !Number.isNaN(Number(c.share)));
+    if (hasShare) {
+      const lines = cands.map((c, i) => {
+        const share = sharePct(c.share);
+        const where = c.where ? ` (${esc(c.where)})` : "";
+        const conf =
+          c.confidence != null ? ` <span class="score">${pct(c.confidence)}</span>` : "";
+        const body = `${esc(c.class_name_en || "?")}${share ? " " + share : ""}${where}${conf}`;
+        if (i === 0) {
+          return `<div class="pred-plot-line"><span class="pred-k">candidates</span> ${body}</div>`;
+        }
+        return `<div class="pred-plot-line pred-plot-cont">${body}</div>`;
+      });
+      bits.push(`<div class="pred-cands">${lines.join("")}</div>`);
+    } else {
+      const parts = cands.map((c) => {
+        const where = c.where ? ` (${esc(c.where)})` : "";
+        const conf =
+          c.confidence != null ? ` <span class="score">${pct(c.confidence)}</span>` : "";
+        return `${esc(c.class_name_en || "?")}${where}${conf}`;
+      });
+      bits.push(
+        `<div class="pred-cands"><span class="pred-k">candidates</span> ${parts.join(" · ")}</div>`
+      );
+    }
+  }
+  if (run.usable_for_satellite_gt === true || run.usable_for_satellite_gt === false) {
+    const u = run.usable_for_satellite_gt === true;
+    const reason = !u && run.reject_reason ? ` · ${esc(String(run.reject_reason))}` : "";
     bits.push(
-      `<div class="pred-cands"><span class="pred-k">candidates</span> ${parts.join(" · ")}</div>`
+      `<div><span class="pred-k">usable</span> ${u ? "yes" : "no"}${reason}</div>`
     );
   }
   if (!bits.length) return "";
