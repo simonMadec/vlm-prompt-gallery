@@ -657,15 +657,17 @@ function predExtraMeta(run) {
   }
   const plots = Array.isArray(run.plots) ? run.plots : [];
   if (plots.length) {
-    const parts = plots.map((p) => {
+    const lines = plots.map((p, i) => {
       const share = sharePct(p.share);
       const conf =
         p.confidence != null ? `<span class="score">${pct(p.confidence)}</span>` : "";
-      return `${esc(p.class_name_en || "?")}${share ? " " + share : ""}${conf ? " " + conf : ""}`;
+      const body = `${esc(p.class_name_en || "?")}${share ? " " + share : ""}${conf ? " " + conf : ""}`;
+      if (i === 0) {
+        return `<div class="pred-plot-line"><span class="pred-k">plots</span> ${body}</div>`;
+      }
+      return `<div class="pred-plot-line pred-plot-cont">${body}</div>`;
     });
-    bits.push(
-      `<div class="pred-plots"><span class="pred-k">plots</span> ${parts.join(" · ")}</div>`
-    );
+    bits.push(`<div class="pred-plots">${lines.join("")}</div>`);
   }
   const cands = Array.isArray(run.candidates) ? run.candidates : [];
   if (cands.length) {
