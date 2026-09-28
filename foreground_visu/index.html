@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>spatial_band · foreground (think0)</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; font:14px/1.4 system-ui,sans-serif; background:#1c1e22; color:#e8e8ea; }
+  header { padding:20px 24px 8px; }
+  h1 { margin:0 0 6px; font-size:20px; font-weight:650; }
+  p { margin:0; color:#9a9aa3; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:16px; padding:16px 24px 32px; }
+  figure { margin:0; background:#25272c; border:1px solid #33363d; border-radius:8px; overflow:hidden; }
+  figure.ok { border-color:#3d6b4f; }
+  figure.uncl { border-color:#8a6230; }
+  figure.bad { border-color:#7a3a3a; }
+  img { display:block; width:100%; height:240px; object-fit:cover; background:#111; }
+  figcaption { padding:10px 12px 12px; }
+  .id { font-size:12px; color:#8b8b95; margin-bottom:4px; word-break:break-all; }
+  .conf { color:#9a9aa3; font-weight:400; }
+  .cues { margin-top:6px; font-size:12px; color:#9a9aa3; }
+  b { font-weight:600; color:#c8c8d0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>spatial_band · location = foreground (think0)</h1>
+  <p>n=9 · sweep t03_soft280_topk64_rep11 · bordure : vert=OK · orange=Unclassifiable · rouge=erreur</p>
+</header>
+<div class="grid">
+
+    <figure class="uncl">
+      <a href="../images/1005719038421133_right.jpg" target="_blank"><img src="../images/1005719038421133_right.jpg" alt="1005719038421133_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1005719038421133_right.jpg</div>
+        <div><b>pred</b> Unclassifiable <span class="conf">conf 1.0</span></div>
+        <div><b>GT</b> Other annual herbaceous crop</div>
+        <div class="cues">dense foliage, closed canopy, obscured ground</div>
+      </figcaption>
+    </figure>
+    <figure class="uncl">
+      <a href="../images/1016878250631342_right.jpg" target="_blank"><img src="../images/1016878250631342_right.jpg" alt="1016878250631342_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1016878250631342_right.jpg</div>
+        <div><b>pred</b> Unclassifiable <span class="conf">conf 1.0</span></div>
+        <div><b>GT</b> Shrubby vegetation</div>
+        <div class="cues">dense foliage, closed canopy, no ground visible</div>
+      </figcaption>
+    </figure>
+    <figure class="uncl">
+      <a href="../images/1019995600300788_right.jpg" target="_blank"><img src="../images/1019995600300788_right.jpg" alt="1019995600300788_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1019995600300788_right.jpg</div>
+        <div><b>pred</b> Unclassifiable <span class="conf">conf 1.0</span></div>
+        <div><b>GT</b> Other annual herbaceous crop</div>
+        <div class="cues">dense foliage, closed canopy, obscured ground</div>
+      </figcaption>
+    </figure>
+    <figure class="uncl">
+      <a href="../images/1186283156802110_left.jpg" target="_blank"><img src="../images/1186283156802110_left.jpg" alt="1186283156802110_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1186283156802110_left.jpg</div>
+        <div><b>pred</b> Unclassifiable <span class="conf">conf 1.0</span></div>
+        <div><b>GT</b> Cassava</div>
+        <div class="cues">dense foliage, closed canopy, no ground visible</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1359208119133098_left.jpg" target="_blank"><img src="../images/1359208119133098_left.jpg" alt="1359208119133098_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1359208119133098_left.jpg</div>
+        <div><b>pred</b> Sorghum/Millet <span class="conf">conf 0.9</span></div>
+        <div><b>GT</b> Mango</div>
+        <div class="cues">tall stalks with seed heads, linear leaf structure, characteristic panicles of s</div>
+      </figcaption>
+    </figure>
+    <figure class="uncl">
+      <a href="../images/2314521312343150_left.jpg" target="_blank"><img src="../images/2314521312343150_left.jpg" alt="2314521312343150_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">2314521312343150_left.jpg</div>
+        <div><b>pred</b> Unclassifiable <span class="conf">conf 1.0</span></div>
+        <div><b>GT</b> Teak</div>
+        <div class="cues">dense foliage, closed canopy, obscured ground</div>
+      </figcaption>
+    </figure>
+    <figure class="uncl">
+      <a href="../images/784919784579594_left.jpg" target="_blank"><img src="../images/784919784579594_left.jpg" alt="784919784579594_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">784919784579594_left.jpg</div>
+        <div><b>pred</b> Unclassifiable <span class="conf">conf 1.0</span></div>
+        <div><b>GT</b> Teak</div>
+        <div class="cues">dense foliage, closed canopy, no visible ground</div>
+      </figcaption>
+    </figure>
+    <figure class="ok">
+      <a href="../images/864160572975146_left.jpg" target="_blank"><img src="../images/864160572975146_left.jpg" alt="864160572975146_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">864160572975146_left.jpg</div>
+        <div><b>pred</b> Sorghum/Millet <span class="conf">conf 0.9</span></div>
+        <div><b>GT</b> Sorghum/Millet</div>
+        <div class="cues">tall stalks, characteristic seed heads/panicles, dense planting pattern</div>
+      </figcaption>
+    </figure>
+    <figure class="ok">
+      <a href="../images/901743965620331_right.jpg" target="_blank"><img src="../images/901743965620331_right.jpg" alt="901743965620331_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">901743965620331_right.jpg</div>
+        <div><b>pred</b> Built-up <span class="conf">conf 1.0</span></div>
+        <div><b>GT</b> Built-up</div>
+        <div class="cues">building wall, roofing sheets, windows</div>
+      </figcaption>
+    </figure>
+</div>
+</body>
+</html>

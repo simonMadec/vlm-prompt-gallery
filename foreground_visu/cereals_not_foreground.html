@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>spatial_band · céréales hors foreground (think0)</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; font:14px/1.4 system-ui,sans-serif; background:#1c1e22; color:#e8e8ea; }
+  header { padding:20px 24px 8px; }
+  h1 { margin:0 0 6px; font-size:20px; font-weight:650; }
+  p { margin:0; color:#9a9aa3; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; padding:16px 24px 32px; }
+  figure { margin:0; background:#25272c; border:1px solid #33363d; border-radius:8px; overflow:hidden; }
+  figure.ok { border-color:#3d6b4f; }
+  figure.bad { border-color:#7a3a3a; }
+  img { display:block; width:100%; height:220px; object-fit:cover; background:#111; }
+  figcaption { padding:10px 12px 12px; }
+  .id { font-size:12px; color:#8b8b95; margin-bottom:4px; word-break:break-all; }
+  .conf { color:#9a9aa3; font-weight:400; }
+  .cues { margin-top:6px; font-size:12px; color:#9a9aa3; }
+  b { font-weight:600; color:#c8c8d0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>spatial_band · céréales (pred) hors foreground (think0)</h1>
+  <p>n=23 · Maize / Sorghum-Millet / Rice · location ≠ foreground · bordure vert=OK · rouge=erreur</p>
+</header>
+<div class="grid">
+
+    <figure class="bad">
+      <a href="../images/1005071895149781_right.jpg" target="_blank"><img src="../images/1005071895149781_right.jpg" alt="1005071895149781_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1005071895149781_right.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.8</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Other class</div>
+        <div class="cues">rows of tall green stalks, characteristic maize leaf structure, agricultural plot layout</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1005719038421133_left.jpg" target="_blank"><img src="../images/1005719038421133_left.jpg" alt="1005719038421133_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1005719038421133_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.9</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Other annual herbaceous crop</div>
+        <div class="cues">dried maize stalks, green undergrowth, field layout</div>
+      </figcaption>
+    </figure>
+    <figure class="ok">
+      <a href="../images/1016621920648286_left.jpg" target="_blank"><img src="../images/1016621920648286_left.jpg" alt="1016621920648286_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1016621920648286_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.9</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Maize</div>
+        <div class="cues">dried maize stalks, linear planting pattern, characteristic leaf morphology of corn</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1020668470220383_right.jpg" target="_blank"><img src="../images/1020668470220383_right.jpg" alt="1020668470220383_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1020668470220383_right.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.9</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Other annual herbaceous crop</div>
+        <div class="cues">tall green stalks, characteristic maize tassels, uniform row planting</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1158520896405894_left.jpg" target="_blank"><img src="../images/1158520896405894_left.jpg" alt="1158520896405894_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1158520896405894_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Shrubby vegetation</div>
+        <div class="cues">distinct maize stalks, corn cobs visible on plants, herbaceous ground cover beneath scatte</div>
+      </figcaption>
+    </figure>
+    <figure class="ok">
+      <a href="../images/1225754669400860_left.jpg" target="_blank"><img src="../images/1225754669400860_left.jpg" alt="1225754669400860_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1225754669400860_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.9</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Maize</div>
+        <div class="cues">dried maize stalks, characteristic corn leaf structure, uniform field planting</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1375824214224581_right.jpg" target="_blank"><img src="../images/1375824214224581_right.jpg" alt="1375824214224581_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1375824214224581_right.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.7</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Cotton</div>
+        <div class="cues">dense green leafy crops, uniform height and texture across the field, typical maize struct</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1429683715243511_right.jpg" target="_blank"><img src="../images/1429683715243511_right.jpg" alt="1429683715243511_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1429683715243511_right.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Cowpea</div>
+        <div class="cues">tall green stalks in midground, low growing crops in foreground, linear planting patterns</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1471069850658896_right.jpg" target="_blank"><img src="../images/1471069850658896_right.jpg" alt="1471069850658896_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1471069850658896_right.jpg</div>
+        <div><b>pred</b> Sorghum/Millet <span class="conf">conf 0.9</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Soybean</div>
+        <div class="cues">tall stalks with terminal panicles, characteristic grain heads of sorghum/millet, field la</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1517937006156711_left.jpg" target="_blank"><img src="../images/1517937006156711_left.jpg" alt="1517937006156711_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1517937006156711_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Teak</div>
+        <div class="cues">tall stalks, tassels at the top, characteristic leaf structure of maize</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1518549729395280_right.jpg" target="_blank"><img src="../images/1518549729395280_right.jpg" alt="1518549729395280_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1518549729395280_right.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.7</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Cotton</div>
+        <div class="cues">rows of tall green stalks in midground, low herbaceous crop cover in foreground</div>
+      </figcaption>
+    </figure>
+    <figure class="ok">
+      <a href="../images/1583212519700682_left.jpg" target="_blank"><img src="../images/1583212519700682_left.jpg" alt="1583212519700682_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1583212519700682_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.9</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Maize</div>
+        <div class="cues">dried maize stalks, linear planting rows, field extent across foreground and midground</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/24233885592953902_right.jpg" target="_blank"><img src="../images/24233885592953902_right.jpg" alt="24233885592953902_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">24233885592953902_right.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Sorghum/Millet</div>
+        <div class="cues">tall green stalks, characteristic maize tassels/flowers, dense row planting</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/25136273806026389_left.jpg" target="_blank"><img src="../images/25136273806026389_left.jpg" alt="25136273806026389_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">25136273806026389_left.jpg</div>
+        <div><b>pred</b> Sorghum/Millet <span class="conf">conf 0.9</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Soybean</div>
+        <div class="cues">tall stalks with seed heads, characteristic panicles of sorghum/millet, planted rows in an</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/3700083780121764_right.jpg" target="_blank"><img src="../images/3700083780121764_right.jpg" alt="3700083780121764_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">3700083780121764_right.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.9</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Cassava</div>
+        <div class="cues">tall green stalks, characteristic maize leaf structure, dense uniform planting pattern</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/797899653223378_left.jpg" target="_blank"><img src="../images/797899653223378_left.jpg" alt="797899653223378_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">797899653223378_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.9</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Groundnut</div>
+        <div class="cues">linear rows of tall stalks, characteristic maize leaf structure, open field layout</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/820414250806157_right.jpg" target="_blank"><img src="../images/820414250806157_right.jpg" alt="820414250806157_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">820414250806157_right.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Cowpea</div>
+        <div class="cues">rows of tall green stalks, characteristic maize leaf structure, agricultural plot layout</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/830190019767170_left.jpg" target="_blank"><img src="../images/830190019767170_left.jpg" alt="830190019767170_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">830190019767170_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Sorghum/Millet</div>
+        <div class="cues">tall linear leaves, characteristic maize plant structure, field layout behind trees</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/837372512522694_left.jpg" target="_blank"><img src="../images/837372512522694_left.jpg" alt="837372512522694_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">837372512522694_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Groundnut</div>
+        <div class="cues">linear rows of tall stalks, characteristic maize leaf structure, open field layout</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/843309761972922_left.jpg" target="_blank"><img src="../images/843309761972922_left.jpg" alt="843309761972922_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">843309761972922_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Cassava</div>
+        <div class="cues">linear rows of tall green stalks, characteristic maize leaf structure, field layout consis</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/863569596360776_left.jpg" target="_blank"><img src="../images/863569596360776_left.jpg" alt="863569596360776_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">863569596360776_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> midground</div>
+        <div><b>GT</b> Bare road</div>
+        <div class="cues">tall linear stalks, dense green foliage characteristic of maize, organized planting patter</div>
+      </figcaption>
+    </figure>
+    <figure class="ok">
+      <a href="../images/875571291619567_left.jpg" target="_blank"><img src="../images/875571291619567_left.jpg" alt="875571291619567_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">875571291619567_left.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.8</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Maize</div>
+        <div class="cues">rows of drying stalks, characteristic maize leaf structure, agricultural field layout</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/876535554796418_right.jpg" target="_blank"><img src="../images/876535554796418_right.jpg" alt="876535554796418_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">876535554796418_right.jpg</div>
+        <div><b>pred</b> Maize <span class="conf">conf 0.85</span></div>
+        <div><b>loc</b> both → midground</div>
+        <div><b>GT</b> Cotton</div>
+        <div class="cues">tall linear rows of maize in the distance, low green leafy crops in the foreground, scatte</div>
+      </figcaption>
+    </figure>
+</div>
+</body>
+</html>
