@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>scene_describe · céréales foreground · conf≥0.65</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; font:14px/1.4 system-ui,sans-serif; background:#1c1e22; color:#e8e8ea; }
+  header { padding:20px 24px 8px; }
+  h1 { margin:0 0 6px; font-size:20px; font-weight:650; }
+  p { margin:0; color:#9a9aa3; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; padding:16px 24px 32px; }
+  figure { margin:0; background:#25272c; border:1px solid #33363d; border-radius:8px; overflow:hidden; }
+  figure.ok { border-color:#3d6b4f; }
+  figure.bad { border-color:#7a3a3a; }
+  img { display:block; width:100%; height:220px; object-fit:cover; background:#111; }
+  figcaption { padding:10px 12px 12px; }
+  .id { font-size:12px; color:#8b8b95; margin-bottom:4px; word-break:break-all; }
+  .conf { color:#9a9aa3; font-weight:400; }
+  .cues { margin-top:6px; font-size:12px; color:#9a9aa3; }
+  b { font-weight:600; color:#c8c8d0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>scene_describe · céréales foreground · conf ≥ 0.65 (think0)</h1>
+  <p>n=6 · where = foreground · vert=pred=GT</p>
+</header>
+<div class="grid">
+
+    <figure class="bad">
+      <a href="../images/1005719038421133_left.jpg" target="_blank"><img src="../images/1005719038421133_left.jpg" alt="1005719038421133_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1005719038421133_left.jpg</div>
+        <div><b>cereal</b> Maize <span class="conf">conf 0.7</span> · <b>where</b> foreground</div>
+        <div><b>best</b> Maize (0.7)</div>
+        <div><b>GT</b> Other annual herbaceous crop</div>
+        <div class="cues">dried stalks typical of maize post-harvest or senescence, row planting structure, herbaceo</div>
+      </figcaption>
+    </figure>
+    <figure class="ok">
+      <a href="../images/1016621920648286_left.jpg" target="_blank"><img src="../images/1016621920648286_left.jpg" alt="1016621920648286_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1016621920648286_left.jpg</div>
+        <div><b>cereal</b> Maize <span class="conf">conf 0.7</span> · <b>where</b> foreground</div>
+        <div><b>best</b> Maize (0.7)</div>
+        <div><b>GT</b> Maize</div>
+        <div class="cues">tall dried stalks, linear planting pattern, typical post-harvest appearance of maize in We</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1359208119133098_left.jpg" target="_blank"><img src="../images/1359208119133098_left.jpg" alt="1359208119133098_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1359208119133098_left.jpg</div>
+        <div><b>cereal</b> Sorghum/Millet <span class="conf">conf 0.7</span> · <b>where</b> foreground</div>
+        <div><b>best</b> Sorghum/Millet (0.7)</div>
+        <div><b>GT</b> Mango</div>
+        <div class="cues">tall stalks, prominent terminal panicles/seed heads, linear planting pattern</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/1471069850658896_right.jpg" target="_blank"><img src="../images/1471069850658896_right.jpg" alt="1471069850658896_right.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">1471069850658896_right.jpg</div>
+        <div><b>cereal</b> Sorghum/Millet <span class="conf">conf 0.8</span> · <b>where</b> foreground</div>
+        <div><b>best</b> Sorghum/Millet (0.8)</div>
+        <div><b>GT</b> Soybean</div>
+        <div class="cues">tall linear leaves, terminal panicles/seed heads, field planting pattern</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/25136273806026389_left.jpg" target="_blank"><img src="../images/25136273806026389_left.jpg" alt="25136273806026389_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">25136273806026389_left.jpg</div>
+        <div><b>cereal</b> Sorghum/Millet <span class="conf">conf 0.8</span> · <b>where</b> foreground</div>
+        <div><b>best</b> Sorghum/Millet (0.8)</div>
+        <div><b>GT</b> Soybean</div>
+        <div class="cues">tall linear stalks, terminal panicles/seed heads, exposed red soil ground layer</div>
+      </figcaption>
+    </figure>
+    <figure class="bad">
+      <a href="../images/837372512522694_left.jpg" target="_blank"><img src="../images/837372512522694_left.jpg" alt="837372512522694_left.jpg" loading="lazy"></a>
+      <figcaption>
+        <div class="id">837372512522694_left.jpg</div>
+        <div><b>cereal</b> Maize <span class="conf">conf 0.7</span> · <b>where</b> foreground</div>
+        <div><b>best</b> Maize (0.7)</div>
+        <div><b>GT</b> Groundnut</div>
+        <div class="cues">linear row planting, broad leaf structure of stalks, open field layout</div>
+      </figcaption>
+    </figure>
+</div>
+</body>
+</html>
