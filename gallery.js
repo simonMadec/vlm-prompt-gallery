@@ -4,7 +4,7 @@ let TEXTS = {};
 let SWEEP_RUNS = {};
 let textsPromise = null;
 const DISPLAY_STEP = 12;
-const FALLBACK_PROMPT_KEYS = ["hierarchical_en_no_comment"];
+const FALLBACK_PROMPT_KEYS = ["spatial_scene"];
 let displayLimit = DISPLAY_STEP;
 
 const COLORMAPS = {
@@ -1177,10 +1177,14 @@ async function init() {
     const defaultPrompts = preferred.length
       ? preferred
       : FALLBACK_PROMPT_KEYS.filter((k) => promptChipIds.includes(k));
-    fillChipGroup("chips-prompts", promptChipIds, {
+    const orderedPromptChips = [
+      ...defaultPrompts,
+      ...promptChipIds.filter((k) => !defaultPrompts.includes(k)),
+    ];
+    fillChipGroup("chips-prompts", orderedPromptChips, {
       checked: false,
       labels: promptLabels,
-      selected: defaultPrompts.length ? defaultPrompts : promptChipIds.slice(0, 1),
+      selected: defaultPrompts.length ? defaultPrompts : orderedPromptChips.slice(0, 1),
     });
     const modelIds = uniqueIds(
       Object.keys(PAYLOAD.model_catalog || {}),
